@@ -1,5 +1,4 @@
 .portfolio {
-  padding-top: 2rem;
   min-height: 100vh;
   display: -ms-flexbox;
   display: flex;
@@ -9,14 +8,21 @@
   flex-direction: column;
   -ms-flex-pack: center;
   justify-content: center;
+  z-index: 1;
+  scroll-margin: 3em;
+
   h1 {
     padding: 1rem 0;
     font-size: 3rem;
+    z-index: 1;
   }
+
   .content-grid {
     -ms-flex: auto;
     flex: auto;
+    z-index: 1;
   }
+
   .portfolio-wrapper {
     display: -ms-flexbox;
     display: flex;
@@ -24,6 +30,7 @@
     flex-wrap: wrap;
     -ms-flex-pack: center;
     justify-content: center;
+    z-index: 1;
   }
 }
 

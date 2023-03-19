@@ -1,0 +1,26 @@
+.scroll-top {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.scroll-top .arrow {
+  text-align: center;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+}
+.scroll-top .arrow .to-top {
+  text-align: center;
+  font-size: 0.5rem;
+  padding-top: 0.125rem;
+}
+.scroll-top .hide {
+  display: none;
+}
+
+@media (max-width: 769px) {
+  .scroll-top {
+    display: none !important;
+  }
+}

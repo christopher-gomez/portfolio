@@ -4,24 +4,42 @@ html {
   box-sizing: border-box;
   font-size: 14px;
 }
-*, *:before, *:after {
+
+*,
+*:before,
+*:after {
   -webkit-box-sizing: inherit;
   box-sizing: inherit;
 }
-body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ol,
+ul {
   margin: 0;
   padding: 0;
 }
-ol, ul {
+
+ol,
+ul {
   list-style: none;
 }
+
 img {
   max-width: 100%;
   height: auto;
 }
+
 html {
   font-size: 12px;
 }
+
 @media (min-width: 376px) {
   html {
     font-size: 14px;
@@ -42,16 +60,28 @@ html {
     font-size: 20px;
   }
 }
-body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ol,
+ul {
   font-weight: 300;
 }
+
 h1 {
   font-weight: 900;
 }
+
 .content-grid {
   margin: 0 auto;
   width: calc(100% - 5rem);
 }
+
 @media (min-width: 426px) {
   .content-grid {
     width: calc(100% - 5rem);
@@ -70,6 +100,7 @@ h1 {
 ::-webkit-scrollbar {
   display: none;
 }
+
 a {
   text-decoration: none;
 }

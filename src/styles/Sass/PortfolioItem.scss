@@ -1,48 +1,118 @@
 .portfolio-item {
   display: flex;
   flex-direction: column;
-  border-radius: 2px;
-  transition: box-shadow 0.25s;
+  border-radius: 1em;
   width: 16.5rem;
   margin: 1em auto;
   box-shadow: -1px 2px 4px rgba(0, 0, 0, 0.25), 1px 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all .1s linear 0ms;
+
+  &.modal {
+    width: 50vw;
+  }
+
+  @media (max-width: 414px) {
+    &.modal {
+      width: 75vw;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    &.modal {
+      width: 85vw;
+    }
+  }
+
   &:hover {
     box-shadow: 5px 5px 13px 5px rgba(0, 0, 0, 0.2);
   }
+
   z-index: 2;
+
   .portfolio-item__title {
+    display: flex;
     flex: 1;
+    flex-direction: column;
     font-size: 26px;
     margin: 10px 0;
     padding: 5px 15px;
     font-weight: 350;
     text-align: left;
   }
+
   .portfolio-item__img {
     display: block;
     min-height: 9em;
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
+    border-radius: 1em 1em 0px 0px; 
   }
-  .portfolio-item__desc {
+
+  .wrapper {
     display: flex;
+    flex: 1;
     flex-direction: column;
     padding: 5px 15px;
-    font-size: 0.75rem;
+    font-size: 3rem;
     font-weight: 400;
     text-align: left;
-    line-height: 1.25rem;
+    line-height: 1.5rem;
+
+    .desc_show_more {
+      padding: 0.25rem 0;
+      padding-bottom: 0;
+      // margin: 0 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+
+      &:hover {
+        cursor: pointer;
+        border-bottom: 2px solid var(--alt-text);
+      }
+    }
+
+    .portfolio-item__desc_less {
+      overflow: hidden;
+      max-height: 16vh;
+      display: block;
+      display: -webkit-box;
+      display: -moz-box;
+      text-overflow: ellipsis;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      line-clamp: 3;
+      box-orient: vertical;
+      font-size: 1rem;
+    }
+
+    .portfolio-item__desc_all {
+      // display: block;
+      padding: 0 .5em;
+      font-size: 1.2rem;
+      font-weight: 500;
+      line-height: 1.25;
+    }
   }
+
   .portfolio-item__icon {
     padding: 1rem 0;
     font-size: 1.5rem;
     font-weight: 100;
     text-align: left;
-    margin: 0 .5em;
+    margin: 0 0.5em;
+    display: inline-flex;
+
     svg {
       margin: 0 0.25rem;
+      display: inline-block;
+      font-size: inherit;
+      height: 1em;
+      overflow: visible;
+      vertical-align: -0.125em;
     }
+
     i {
       margin: 0 0.25rem;
     }
@@ -54,21 +124,27 @@
     justify-content: flex-start;
     font-size: 0.875rem;
     font-weight: 400;
+
     a {
       padding-bottom: 0.25rem;
       margin: 0 1em;
       border-bottom: 2px solid transparent;
+
       &:hover {
         cursor: pointer;
         border-bottom: 2px solid inherit;
       }
     }
   }
+
   background-color: var(--alt-bg);
   color: var(--alt-text);
+  font-weight: bold;
+
   a {
     color: var(--alt-text);
   }
+
   .portfolio-item__links a:hover {
     border-bottom: 2px solid var(--alt-text);
   }

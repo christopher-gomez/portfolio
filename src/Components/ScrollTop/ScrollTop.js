@@ -3,7 +3,7 @@ import { toTop as scrollToPageTop } from '../../util/scroll';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAngleDoubleUp } from '@fortawesome/free-solid-svg-icons';
 
-import './styles.scss';
+import '../../styles/CSS/ScrollTop.css';
 
 export default class ScrollTop extends React.Component {
   constructor(props) {

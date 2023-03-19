@@ -1,5 +1,5 @@
 import React from 'react';
-import './styles.scss';
+import '../../styles/CSS/ParallaxBg.css';
 
 export default class ParallaxBg extends React.Component {
   render() {

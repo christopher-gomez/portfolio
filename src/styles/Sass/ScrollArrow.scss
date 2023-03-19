@@ -1,15 +1,19 @@
 .scroll {
   cursor: pointer;
+
   .arrow {
     text-align: center;
-    margin: 0 auto;
+    margin: 2rem auto;
+    margin-top: 2.5rem;
     padding-bottom: 0.5rem;
+
     .scroll-text {
       text-align: center;
       font-size: 0.5rem;
       margin-bottom: -0.125rem;
     }
   }
+
   .bounce {
     -webkit-animation: bounce 2s infinite;
     animation: bounce 2s infinite;
@@ -17,6 +21,7 @@
 }
 
 @-webkit-keyframes bounce {
+
   0%,
   20%,
   50%,
@@ -39,6 +44,7 @@
 
 
 @keyframes bounce {
+
   0%,
   20%,
   50%,

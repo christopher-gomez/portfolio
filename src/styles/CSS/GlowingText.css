@@ -2,38 +2,29 @@
   0% {
     color: var(--text-color);
   }
-
   4% {
-    color: #f5871f;
+    color: var(--text-color);
   }
-
   8% {
-    color: #1edf3e;
+    color: var(--text-color);
   }
-
-  12% {
-    color: #3833ed;
+  10% {
+    color: white;
   }
-
   16% {
-    color: #ed33cf;
+    color: var(--text-color);
   }
-
   20% {
-    color: #7f33ed;
+    color: var(--text-color);
   }
-
   24% {
     color: var(--text-color);
   }
+  30% {
+    color: inherit;
+  }
 }
-
-
 .glowing-text span {
-  text-align: center;
-  min-width: 5px;
-  height: 100%;
-  display: inline-block;
   animation: highlight 8s;
   animation-fill-mode: backwards;
   animation-iteration-count: infinite;
