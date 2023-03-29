@@ -26,6 +26,12 @@
   opacity: 0.5;
   height: 100%;
 }
+.App.hovered * {
+  color: white !important;
+}
+.App.hovered .nav * {
+  color: black !important;
+}
 
 .row {
   display: flex;

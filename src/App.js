@@ -30,7 +30,7 @@ const firebaseConfig = {
   storageBucket: "portfolio-11aff.appspot.com",
   messagingSenderId: "858628670182",
   appId: "1:858628670182:web:9d22a19fc7672dd85ef127",
-  measurementId: "G-ZWVB96GQ8E"
+  measurementId: "G-ZWVB96GQ8E",
 };
 
 // Initialize Firebase
@@ -71,7 +71,7 @@ const App = () => {
     else info = calcElemScrollY("#root");
 
     var amt = info.percentage <= 0.75 ? 0.75 : info.percentage;
-    var blur = info.percentage <= .9 ? (100 - info.percentage * 100) / 10 : 0;
+    var blur = info.percentage <= 0.9 ? (100 - info.percentage * 100) / 10 : 0;
     setState((state) => ({ ...state, bgOpacity: amt, bgBlur: blur }));
 
     // const checkScroll = () => {
@@ -171,7 +171,15 @@ const App = () => {
       <Nav forceSticky={state.forceStickyNav} />
       <Transition visible={state.contentShowing}>
         <Landing {...state} />
-        <Portfolio />
+        <Portfolio
+          onCardHover={(hovered) => {
+            if (hovered) {
+              document.querySelector(".App").classList.add("hovered");
+            } else {
+              document.querySelector(".App").classList.remove("hovered");
+            }
+          }}
+        />
         <About />
         <ScrollTop />
       </Transition>

@@ -29,6 +29,18 @@
     opacity: 0.5;
     height: 100%;
   }
+
+  &.hovered {
+    * {
+      color: white !important;
+    }
+
+    .nav {
+      * {
+        color: black !important;
+      }
+    }
+  }
 }
 
 .row {

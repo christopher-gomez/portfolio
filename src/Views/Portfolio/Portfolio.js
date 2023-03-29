@@ -16,7 +16,7 @@ import {
 import FadeMenu from "../../Components/FadeMenu";
 import FontAwesomeTextIcon from "../../Components/FontAwesomeTextIcon";
 
-export default ({ color }) => {
+export default ({ color, onCardHover }) => {
   const [state, setState] = useState({
     showingModal: false,
     modalItem: null,
@@ -27,24 +27,20 @@ export default ({ color }) => {
     allowHoverFocus: true,
   });
 
-  const elementInView = (el, percentageScroll = 0) => {
-    if (el == undefined) return false;
-
-    const elementTop = el.getBoundingClientRect().top;
-
-    return elementTop >= percentageScroll;
-  };
-
   const timer = useRef();
   const scrollingToward = useRef(true);
   const prevTop = useRef(0);
+  const delayTimer = useRef();
+
   useEffect(() => {
-    console.log("effe");
     const handleScroll = (e) => {
       clearTimeout(timer.current);
 
       const el = document.querySelector(".portfolio");
       setState((s) => ({ ...s, ignoreHovered: true }));
+
+      if (onCardHover) onCardHover(false);
+
       let curTop = el.getBoundingClientRect().top;
 
       if (curTop > 0 && curTop < prevTop.current) {
@@ -77,7 +73,15 @@ export default ({ color }) => {
       setState((s) => ({ ...s, hovered: false }));
   }, [state.allowHoverFocus]);
 
-  const delayTimer = useRef();
+  useEffect(() => {
+    if (onCardHover && !state.ignoreHovered) onCardHover(state.hovered);
+  }, [state.hovered]);
+
+  useEffect(() => {
+    if (!state.ignoreHovered && state.hovered) {
+      if (onCardHover) onCardHover(true);
+    }
+  }, [state.ignoreHovered]);
 
   return (
     <PortfolioProvider>

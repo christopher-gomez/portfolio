@@ -10,35 +10,27 @@ import {
 import "../../styles/CSS/Landing.css";
 import ScrollArrow from "../../Components/ScrollArrow/ScrollArrow";
 import ColorCharacters from "../../Components/GlowingText/ColorCharacters";
+import { detectLineWrap } from "../../util/text";
+import Link from "../../Components/Link";
+import ScrollButton from "../../Components/ScrollButton";
 
 export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
   const linkContainer = useRef(null);
   const nameContainer = useRef(null);
   const arrowContainer = useRef(null);
-  const tagline = "Creator | Engineer | Scientist".split("");
+  const wrapperRef = useRef();
+  const charContainer = useRef();
+  const isInitialized = useRef(false);
+  const x = useRef(0);
+
+  // const tagline = "Creator | Engineer | Scientist".split("");
 
   const [state, setState] = useState({
     prevColor: null,
     curColor: null,
     isDrawing: true,
+    wrapped: false,
   });
-
-  useEffect(() => {
-    setState((state) => ({
-      ...state,
-      prevColor: state.curColor,
-      curColor: color,
-    }));
-  }, [color]);
-
-  useEffect(() => {
-    setState((state) => ({ ...state, isDrawing }));
-  }, [isDrawing]);
-
-  const x = useRef(0);
-  useEffect(() => {
-    x.current = drawX;
-  }, [drawX]);
 
   const elementInView = (el, percentageScroll = undefined) => {
     if (el == undefined) return false;
@@ -60,8 +52,6 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
     element.classList.remove("scrolled");
     element.classList.add("fade-out-top");
   };
-
-  const isInitialized = useRef(false);
 
   useEffect(() => {
     if (isInitialized.current) return;
@@ -126,7 +116,61 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
     };
   }, []);
 
-  const wrapperRef = useRef();
+  useEffect(() => {
+    setState((state) => ({
+      ...state,
+      prevColor: state.curColor,
+      curColor: color,
+    }));
+  }, [color]);
+
+  useEffect(() => {
+    setState((state) => ({ ...state, isDrawing }));
+  }, [isDrawing]);
+
+  useEffect(() => {
+    x.current = drawX;
+  }, [drawX]);
+
+  const wrapCheckTimeout = useRef();
+
+  const resizing = useRef(false);
+
+  useEffect(() => {
+    function checkLineWrap() {
+      if (!charContainer.current) return;
+
+      clearTimeout(wrapCheckTimeout.current);
+      resizing.current = true;
+
+      wrapCheckTimeout.current = setTimeout(() => {
+        detectLineWrap(
+          charContainer.current,
+          () => {
+            setState((s) => ({ ...s, wrapped: true }));
+            console.log("wrap");
+          },
+          () => {
+            setState((s) => ({ ...s, wrapped: false }));
+            console.log("not wrap");
+          }
+        );
+        resizing.current = false;
+      }, 250);
+    }
+
+    if (charContainer.current) {
+      // handles window resize events
+      window.addEventListener("resize", checkLineWrap);
+      checkLineWrap();
+    } else {
+      window.removeEventListener("resize", checkLineWrap);
+    }
+
+    return () => {
+      window.removeEventListener("resize", checkLineWrap);
+    };
+  }, [charContainer.current]);
 
   return (
     <div className="landing" id="landing">
@@ -134,30 +178,78 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
         <div className="intro-wrapper" ref={wrapperRef}>
           <div className="intro js-scroll" ref={nameContainer}>
             <ColorCharacters
+              ref={charContainer}
+              style={
+                !resizing.current && state.wrapped
+                  ? { display: "none", ">*": { display: "none" } }
+                  : {}
+              }
               string={"Christopher Gomez"}
               color={(i) =>
                 (() => {
-                  let string =
-                    !elementInView(wrapperRef.current, -350) || hack
-                      ? "black"
-                      : state.isDrawing && x.current >= 0.36 + i * 0.015
-                      ? "white"
-                      : "black";
+                  let string = "";
+
+                  if (!state.wrapped || resizing.current)
+                    string =
+                      !elementInView(wrapperRef.current, -475) || hack
+                        ? "black"
+                        : state.isDrawing && x.current >= 0.36 + i * 0.015
+                        ? "white"
+                        : "black";
+                  else string = "transparent";
 
                   return string;
                 })()
               }
             />
+            <div
+              style={
+                !resizing.current && state.wrapped
+                  ? {}
+                  : { display: "none", ">*": { display: "none" } }
+              }
+            >
+              <ColorCharacters
+                // ref={charContainer}
+                string={"Christopher"}
+                color={(i) =>
+                  (() => {
+                    let string =
+                      !elementInView(wrapperRef.current, -475) || hack
+                        ? "black"
+                        : state.isDrawing && x.current >= 0.36 + i * 0.035
+                        ? "white"
+                        : "black";
+
+                    return string;
+                  })()
+                }
+              />
+              <ColorCharacters
+                // ref={charContainer}
+                string={"Gomez"}
+                color={(i) =>
+                  (() => {
+                    let string =
+                      !elementInView(wrapperRef.current, -475) || hack
+                        ? "black"
+                        : state.isDrawing && x.current >= 0.4 + i * 0.035
+                        ? "white"
+                        : "black";
+
+                    return string;
+                  })()
+                }
+              />
+            </div>
+
             <div className="menu">
-              <div
-                className="menu__item"
-                onClick={(e) => this.scrollToPage(".portfolio")}
-              >
+              <ScrollButton scrollTarget=".portfolio">
                 <ColorCharacters
                   string={"Portfolio"}
                   color={(i) =>
                     (() => {
-                      return !elementInView(wrapperRef.current, -300) || hack
+                      return !elementInView(wrapperRef.current, -475) || hack
                         ? "black"
                         : state.isDrawing && x.current >= 0.4 + i * 0.015
                         ? "white"
@@ -165,24 +257,21 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
                     })()
                   }
                 />
-              </div>
-              <div
-                className="menu__item"
-                onClick={(e) => this.scrollToPage(".about")}
-              >
+              </ScrollButton>
+              <ScrollButton scrollTarget=".about">
                 <ColorCharacters
                   string={"About"}
                   color={(i) =>
                     (() => {
-                      return !elementInView(wrapperRef.current, -300) || hack
+                      return !elementInView(wrapperRef.current, -475) || hack
                         ? "black"
                         : state.isDrawing && x.current >= 0.5 + i * 0.015
                         ? "white"
                         : "black";
                     })()
                   }
-                />{" "}
-              </div>
+                />
+              </ScrollButton>
             </div>
             {/* <GlowingText delay={1000} letters={"Christopher Gomez".split("")} /> */}
           </div>
@@ -190,16 +279,12 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
               <GlowingText delay={1000} letters={tagline}/>
             </div> */}
           <div className="social animate-icons js-scroll" ref={linkContainer}>
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://github.com/christophgomez"
-            >
+            <Link newTab href="https://github.com/christophgomez">
               <FontAwesomeIcon
                 style={{
                   transition: "color .25s ease-out",
                   color:
-                    !elementInView(wrapperRef.current, -250) || hack
+                    !elementInView(wrapperRef.current, -475) || hack
                       ? "black"
                       : isErasing && eraseX <= 0.415
                       ? "white"
@@ -211,17 +296,16 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
                 }}
                 icon={faGithubSquare}
               />
-            </a>
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
+            </Link>
+            <Link
+              newTab
               href="https://www.linkedin.com/in/christopher-gomez-8489a7186/"
             >
               <FontAwesomeIcon
                 style={{
                   transition: "color .25s ease-out",
                   color:
-                    !elementInView(wrapperRef.current, -250) || hack
+                    !elementInView(wrapperRef.current, -475) || hack
                       ? "black"
                       : isErasing && eraseX <= 0.46
                       ? "white"
@@ -233,17 +317,13 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
                 }}
                 icon={faLinkedinIn}
               />
-            </a>
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://codepen.io/christophergomez"
-            >
+            </Link>
+            <Link newTab href="https://codepen.io/christophergomez">
               <FontAwesomeIcon
                 style={{
                   transition: "color .25s ease-out",
                   color:
-                    !elementInView(wrapperRef.current, -250) || hack
+                    !elementInView(wrapperRef.current, -475) || hack
                       ? "black"
                       : isErasing && eraseX <= 0.515
                       ? "white"
@@ -255,7 +335,7 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
                 }}
                 icon={faCodepen}
               />
-            </a>
+            </Link>
           </div>
         </div>
       </main>

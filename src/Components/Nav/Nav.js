@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaintBrush } from "@fortawesome/free-solid-svg-icons";
 import { toElement as scrollToElement } from "../../util/scroll";
 import { hexToRgb } from "../../util/color";
+import ScrollButton from "../ScrollButton";
 
 export default (props) => {
   const [state, setState] = useState({ isSticky: false });
@@ -70,6 +71,7 @@ export default (props) => {
   return (
     <header>
       <nav
+        role="navigation"
         className={`nav js-scroll ${stickyClass.current}`}
         ref={nav}
         style={stickyStyles}
@@ -79,27 +81,10 @@ export default (props) => {
           onClick={(e) => scrollToPage(".landing")}
         >
           <p>Christopher Gomez</p>
-          {/* <div
-            onClick={() => props.toggleRandomTheme()}
-            className="magic-wand bounce-xy"
-          >
-            <FontAwesomeIcon
-              style={{ color: "var(--text-color)" }}
-              icon={faPaintBrush}
-            />
-            <div className="magic-text">Color Me!</div>
-          </div> */}
         </div>
         <div className="menu">
-          <div
-            className="menu__item"
-            onClick={(e) => scrollToPage(".portfolio")}
-          >
-            Portfolio
-          </div>
-          <div className="menu__item" onClick={(e) => scrollToPage(".about")}>
-            About
-          </div>
+          <ScrollButton scrollTarget=".portfolio">Portfolio</ScrollButton>
+          <ScrollButton scrollTarget=".about">About</ScrollButton>
         </div>
       </nav>
     </header>

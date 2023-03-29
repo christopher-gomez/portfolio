@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { hexToRgb } from "../../util/color";
 import Backdrop from "../Backdrop";
 import { createContainer } from "react-tracked";
+import Link from "../Link";
 
 const useValue = () =>
   useState({
@@ -223,14 +224,13 @@ const PortfolioItem = (props) => {
         <div className="portfolio-item__links">
           {item.links.map((link, i) => {
             return (
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+              newTab
                 href={link.href}
                 key={"portfolio-item-link-" + i}
               >
                 {link.title}
-              </a>
+              </Link>
             );
           })}
         </div>

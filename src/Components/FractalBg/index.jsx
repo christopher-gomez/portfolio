@@ -19,6 +19,7 @@ import "../../styles/CSS/FractalBG.css";
 import { hexToRgb, saturateByTenth } from "../../util/color";
 import { calcElemScrollY } from "../../util/scroll";
 import Backdrop from "../Backdrop";
+import Link from "../Link";
 
 /**
  * @param {{color: {bgColor: string, textColor: string, altBg: string, altText: string}}}
@@ -91,8 +92,8 @@ export default (props) => {
     and allow the radius of them to vary. If so, modify the next three variables.
      */
     numPaths: 2,
-    maxMaxRad: 350,
-    minMaxRad: 200,
+    maxMaxRad: 375,
+    minMaxRad: 225,
 
     /* We draw closed curves with varying radius. The factor below should be set between 0 and 1,
     representing the size of the smallest radius with respect to the largest possible.
@@ -105,7 +106,7 @@ export default (props) => {
     iterations: 6,
 
     //number of curves to draw on every tick of the timer
-    drawsPerFrame: 6,
+    drawsPerFrame: 3,
 
     bgColor: "#FFFFFF",
 
@@ -189,7 +190,7 @@ export default (props) => {
     if (drawCanvas.current) {
       cancelAnimationFrame(growingFractal.current.updateId);
       growingFractal.current.updateId = null;
-      curGrowFPS.current = 0;
+      // curGrowFPS.current = 0;
 
       drawCanvas.current.height = window.innerHeight + 100;
       drawCanvas.current.width = window.innerWidth;
@@ -229,7 +230,7 @@ export default (props) => {
     if (drawCanvas.current) {
       cancelAnimationFrame(growingFractal.current.updateId);
       growingFractal.current.updateId = null;
-      curGrowFPS.current = 0;
+      // curGrowFPS.current = 0;
 
       drawCanvas.current.height = window.innerHeight + 100;
       drawCanvas.current.width = window.innerWidth;
@@ -320,8 +321,8 @@ export default (props) => {
       if (canvasScrollAnimFrame.current)
         cancelAnimationFrame(canvasScrollAnimFrame.current);
 
-      curGrowFPS.current = 0;
-      curShrinkFPS.current = 0;
+      // curGrowFPS.current = 0;
+      // curShrinkFPS.current = 0;
 
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScrollY);
@@ -349,8 +350,8 @@ export default (props) => {
       curColor.current = color;
 
       cancelAnimationFrame(growingFractal.current.updateId);
-      curGrowFPS.current = 0;
-      curShrinkFPS.current = 0;
+      // curGrowFPS.current = 0;
+      // curShrinkFPS.current = 0;
 
       if (drawCtx.current) {
         clearCanvas(drawCtx.current);
@@ -397,7 +398,7 @@ export default (props) => {
       if (growingFractal.current.updateId) {
         growingFractal.current.shouldAnimate = false;
         cancelAnimationFrame(growingFractal.current.updateId);
-        curGrowFPS.current = 0;
+        // curGrowFPS.current = 0;
       }
 
       // growingFractal.current.updateId = setInterval(() => {
@@ -410,7 +411,7 @@ export default (props) => {
       if (growingFractal.current.updateId) {
         cancelAnimationFrame(growingFractal.current.updateId);
         growingFractal.current.updateId = null;
-        curGrowFPS.current = 0;
+        // curGrowFPS.current = 0;
       }
     }
   }, [drawParams.isDrawing]);
@@ -540,8 +541,20 @@ export default (props) => {
     }
 
     growingFractal.current.curSinFactor =
-      Math.floor(Math.random() * (-20 + 80 + 1)) - 80;
+      Math.floor(Math.random() * (-10 + 70 + 1)) - 70;
     growingFractal.current.paths = paths;
+
+    setDrawParams((s) => ({
+      ...s,
+      drawsPerFrame:
+        drawCanvas.current.width <= 425
+          ? 2
+          : drawCanvas.current.width <= 768
+          ? 4
+          : drawCanvas.current.width < 2560
+          ? 6
+          : 8,
+    }));
   }
 
   //Here is the function that defines a noisy (but not wildly varying) data set which we will use to draw the curves.
@@ -621,6 +634,7 @@ export default (props) => {
 
   const curGrowFPS = useRef(60);
   const curShrinkFPS = useRef(60);
+
   function animate(currentDelta, fractal, isErase) {
     if (!fractal.updateId) return;
 
@@ -838,9 +852,17 @@ export default (props) => {
       c.phase += 0.0005;
 
       theta = c.phase;
+
+      let move = (_ctx.canvas.width + _ctx.canvas.width * 0.05) * 0.0005;
+      if (drawParams.drawsPerFrame < 4 && move <= 0.59) move = 0.9;
+      else if (move <= 0.59) move = 0.6;
+      if (drawParams.drawsPerFrame > 2 && move > 0.8) move = 0.8;
+
       //move center
-      c.centerX += 0.7;
-      c.centerY += 0.0001;
+      c.centerX += move; //~.6-.9
+
+      c.centerY +=
+        (_ctx.canvas.height + _ctx.canvas.height * 0.0005) * 0.00000005; //~0.0001
 
       rad =
         c.minRad +
@@ -850,7 +872,7 @@ export default (props) => {
       yOffset =
         growingFractal.current.curSinFactor *
           Math.sin(c.globalPhase + (drawCount / 1000) * TWO_PI) -
-        60;
+        50;
 
       //stop when off screen
       if (c.centerX > drawCanvas.current.width + drawParams.maxMaxRad) {
@@ -886,7 +908,7 @@ export default (props) => {
       _ctx.closePath();
       _ctx.stroke();
 
-      if (onFractalPosition !== undefined)
+      if (onFractalPosition !== undefined && i == 0)
         onFractalPosition({
           eraseX:
             drawParams.isErasing && isErase
@@ -1007,13 +1029,12 @@ export default (props) => {
                       <p>
                         A fractal generated using a recursive algorithm called
                         the{" "}
-                        <a
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link
                           href="https://en.wikipedia.org/wiki/Mandelbrot_set"
+                          newTab
                         >
                           "Mandelbrot Set"
-                        </a>
+                        </Link>
                         , a well-known mathematical set of complex numbers.
                       </p>
                       {/* <br/>
@@ -1035,13 +1056,12 @@ export default (props) => {
                   </div>
                   <div className="foot">
                     <div className="source">
-                      <a
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        newTab
                         href="https://github.com/christopher-gomez/portfolio/blob/master/src/Components/FractalBg/index.jsx"
                       >
                         Source
-                      </a>
+                      </Link>
                     </div>
                     <div className="fps">
                       <p>
@@ -1242,7 +1262,7 @@ export default (props) => {
             pointerEvents: "all",
           }}
         ></div>
-        {!UIState.active && (bgBlur === undefined || bgBlur <= .2) && (
+        {!UIState.active && (bgBlur === undefined || bgBlur <= 0.2) && (
           <FontAwesomeIcon
             style={{
               position: "fixed",

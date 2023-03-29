@@ -1,5 +1,6 @@
 import React from "react";
 import "../../styles/CSS/Slideshow.css";
+import Link from "../Link";
 
 export default class Slideshow extends React.Component {
   constructor(props) {
@@ -64,12 +65,12 @@ export default class Slideshow extends React.Component {
       <div className="slideshow">
         <div className="slideshow-container">
           {slides}
-          <a className="prev" onClick={() => this.goPrev()}>
+          <Link className="prev" onClick={() => this.goPrev()}>
             &#10094;
-          </a>
-          <a className="next" onClick={() => this.goNext()}>
+          </Link>
+          <Link className="next" onClick={() => this.goNext()}>
             &#10095;
-          </a>
+          </Link>
         </div>
         <br />
 
