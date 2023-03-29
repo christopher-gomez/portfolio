@@ -9,16 +9,18 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import "../../styles/CSS/Landing.css";
 import ScrollArrow from "../../Components/ScrollArrow/ScrollArrow";
-import GlowingText from "../../Components/GlowingText/GlowingText.js";
+import ColorCharacters from "../../Components/GlowingText/ColorCharacters";
 
-export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
+export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
   const linkContainer = useRef(null);
+  const nameContainer = useRef(null);
+  const arrowContainer = useRef(null);
   const tagline = "Creator | Engineer | Scientist".split("");
 
   const [state, setState] = useState({
     prevColor: null,
     curColor: null,
-    isDrawing,
+    isDrawing: true,
   });
 
   useEffect(() => {
@@ -33,11 +35,18 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
     setState((state) => ({ ...state, isDrawing }));
   }, [isDrawing]);
 
-  const elementInView = (el, percentageScroll = -250) => {
-    if (el == undefined) return false;
-    const elementTop = el.getBoundingClientRect().top;
+  const x = useRef(0);
+  useEffect(() => {
+    x.current = drawX;
+  }, [drawX]);
 
-    return elementTop >= percentageScroll;
+  const elementInView = (el, percentageScroll = undefined) => {
+    if (el == undefined) return false;
+    var rect = el.getBoundingClientRect();
+    return (
+      rect.y + rect.height + (percentageScroll ?? -rect.height) > 0 ||
+      rect.y - (percentageScroll ?? 0) > window.innerHeight
+    );
   };
 
   const displayScrollElement = (element) => {
@@ -52,12 +61,32 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
     element.classList.add("fade-out-top");
   };
 
+  const isInitialized = useRef(false);
+
   useEffect(() => {
+    if (isInitialized.current) return;
+
     const handleScrollAnimation = (e) => {
-      if (elementInView(document.querySelector(".landing"))) {
+      if (elementInView(wrapperRef.current)) {
         displayScrollElement(linkContainer.current);
+        displayScrollElement(nameContainer.current);
       } else {
         hideScrollElement(linkContainer.current);
+        hideScrollElement(nameContainer.current);
+      }
+
+      if (elementInView(wrapperRef.current)) {
+        if (wrapperRef.current) {
+          wrapperRef.current.classList.add("blurred");
+        }
+
+        displayScrollElement(arrowContainer.current);
+      } else {
+        if (wrapperRef.current) {
+          wrapperRef.current.classList.remove("blurred");
+        }
+
+        hideScrollElement(arrowContainer.current);
       }
     };
 
@@ -66,44 +95,95 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
     };
 
     if (linkContainer.current) {
-      window.addEventListener("scroll", handleScrollAnimation);
-      window.addEventListener("resize", handleResize);
-      displayScrollElement(linkContainer.current);
+      setTimeout(() => {
+        displayScrollElement(linkContainer.current);
+      }, 500);
     }
+
+    if (nameContainer.current) {
+      setTimeout(() => {
+        displayScrollElement(nameContainer.current);
+      }, 500);
+    }
+
+    if (arrowContainer.current) {
+      setTimeout(() => {
+        displayScrollElement(arrowContainer.current);
+      }, 500);
+    }
+
+    window.removeEventListener("scroll", handleScrollAnimation);
+    window.removeEventListener("resize", handleResize);
+
+    window.addEventListener("scroll", handleScrollAnimation);
+    window.addEventListener("resize", handleResize);
+    isInitialized.current = true;
 
     return () => {
       window.removeEventListener("scroll", handleScrollAnimation);
       window.removeEventListener("resize", handleResize);
+      isInitialized.current = false;
     };
-  }, [linkContainer]);
+  }, []);
+
+  const wrapperRef = useRef();
 
   return (
     <div className="landing" id="landing">
       <main>
-        <div className="wrapper">
-          <div className="intro">
-            {"Christopher Gomez".split("").map((letter, i) => {
-              return (
-                <span
-                  style={{
-                    color: !elementInView(
-                      document.querySelector(".landing"),
-                      -100
-                    )
-                      ? "var(--text-color)"
-                      : isErasing && eraseX <= 0.4 +(i * .5)
-                      ? "var(--bg-color)"
-                      : isDrawing && drawX >= 0.5 +(i * .5)
-                      ? "var(--bg-color)"
-                      : isDrawing
-                      ? state.curColor.textColor
-                      : "var(--bg-color)",
-                  }}
-                >
-                  {letter}
-                </span>
-              );
-            })}
+        <div className="intro-wrapper" ref={wrapperRef}>
+          <div className="intro js-scroll" ref={nameContainer}>
+            <ColorCharacters
+              string={"Christopher Gomez"}
+              color={(i) =>
+                (() => {
+                  let string =
+                    !elementInView(wrapperRef.current, -350) || hack
+                      ? "black"
+                      : state.isDrawing && x.current >= 0.36 + i * 0.015
+                      ? "white"
+                      : "black";
+
+                  return string;
+                })()
+              }
+            />
+            <div className="menu">
+              <div
+                className="menu__item"
+                onClick={(e) => this.scrollToPage(".portfolio")}
+              >
+                <ColorCharacters
+                  string={"Portfolio"}
+                  color={(i) =>
+                    (() => {
+                      return !elementInView(wrapperRef.current, -300) || hack
+                        ? "black"
+                        : state.isDrawing && x.current >= 0.4 + i * 0.015
+                        ? "white"
+                        : "black";
+                    })()
+                  }
+                />
+              </div>
+              <div
+                className="menu__item"
+                onClick={(e) => this.scrollToPage(".about")}
+              >
+                <ColorCharacters
+                  string={"About"}
+                  color={(i) =>
+                    (() => {
+                      return !elementInView(wrapperRef.current, -300) || hack
+                        ? "black"
+                        : state.isDrawing && x.current >= 0.5 + i * 0.015
+                        ? "white"
+                        : "black";
+                    })()
+                  }
+                />{" "}
+              </div>
+            </div>
             {/* <GlowingText delay={1000} letters={"Christopher Gomez".split("")} /> */}
           </div>
           {/* <div className='tagline'>
@@ -118,20 +198,16 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
               <FontAwesomeIcon
                 style={{
                   transition: "color .25s ease-out",
-                  color: !elementInView(
-                    document.querySelector(".landing"),
-                    -100
-                  )
-                    ? "var(--text-color)"
-                    : isErasing && eraseX <= 0.415
-                    ? "var(--bg-color)"
-                    : isDrawing && drawX >= 0.45
-                    ? "var(--bg-color)"
-                    : isDrawing && state.prevColor
-                    ? state.prevColor.textColor
-                    : isDrawing
-                    ? state.curColor.textColor
-                    : "var(--bg-color)",
+                  color:
+                    !elementInView(wrapperRef.current, -250) || hack
+                      ? "black"
+                      : isErasing && eraseX <= 0.415
+                      ? "white"
+                      : isDrawing && drawX >= 0.45
+                      ? "white"
+                      : isDrawing
+                      ? "black"
+                      : "white",
                 }}
                 icon={faGithubSquare}
               />
@@ -144,20 +220,16 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
               <FontAwesomeIcon
                 style={{
                   transition: "color .25s ease-out",
-                  color: !elementInView(
-                    document.querySelector(".landing"),
-                    -100
-                  )
-                    ? "var(--text-color)"
-                    : isErasing && eraseX <= 0.46
-                    ? "var(--bg-color)"
-                    : isDrawing && drawX >= 0.5
-                    ? "var(--bg-color)"
-                    : isDrawing && state.prevColor
-                    ? state.prevColor.textColor
-                    : isDrawing
-                    ? state.curColor.textColor
-                    : "var(--bg-color)",
+                  color:
+                    !elementInView(wrapperRef.current, -250) || hack
+                      ? "black"
+                      : isErasing && eraseX <= 0.46
+                      ? "white"
+                      : isDrawing && drawX >= 0.5
+                      ? "white"
+                      : isDrawing
+                      ? "black"
+                      : "white",
                 }}
                 icon={faLinkedinIn}
               />
@@ -170,20 +242,16 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
               <FontAwesomeIcon
                 style={{
                   transition: "color .25s ease-out",
-                  color: !elementInView(
-                    document.querySelector(".landing"),
-                    -100
-                  )
-                    ? "var(--text-color)"
-                    : isErasing && eraseX <= 0.515
-                    ? "var(--bg-color)"
-                    : isDrawing && drawX >= 0.54
-                    ? "var(--bg-color)"
-                    : isDrawing && state.prevColor
-                    ? state.prevColor.textColor
-                    : isDrawing
-                    ? state.curColor.textColor
-                    : "var(--bg-color)",
+                  color:
+                    !elementInView(wrapperRef.current, -250) || hack
+                      ? "black"
+                      : isErasing && eraseX <= 0.515
+                      ? "white"
+                      : isDrawing && drawX >= 0.54
+                      ? "white"
+                      : isDrawing
+                      ? "black"
+                      : "white",
                 }}
                 icon={faCodepen}
               />
@@ -191,7 +259,9 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color }) => {
           </div>
         </div>
       </main>
-      <ScrollArrow to=".portfolio" />
+      <span className="js-scroll" style={{ zIndex: 1 }} ref={arrowContainer}>
+        <ScrollArrow to=".portfolio" />
+      </span>
     </div>
   );
 };

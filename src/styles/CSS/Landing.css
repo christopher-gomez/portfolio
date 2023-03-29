@@ -8,6 +8,7 @@
   display: -ms-flexbox;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 .landing main {
   display: -ms-flexbox;
@@ -23,9 +24,7 @@
   color: black;
   z-index: 1;
 }
-.landing main .wrapper {
-  -ms-flex: auto;
-  flex: auto;
+.landing main .intro-wrapper {
   display: -ms-flexbox;
   display: flex;
   -ms-flex-direction: column;
@@ -34,46 +33,72 @@
   justify-content: center;
   text-align: center;
   z-index: 1;
+  height: fit-content;
+  width: fit-content;
+  margin: auto;
+  padding: 1.5rem;
+  border-radius: 1em;
 }
-
-.wrapper > .intro {
-  font-size: 2.5rem;
-  font-weight: bold;
+.landing main .intro-wrapper.blurred {
+  background: rgba(255, 255, 255, 0.1);
+}
+.landing main .intro-wrapper .intro {
+  font-size: 3rem;
   line-height: 4rem;
   padding-bottom: 1rem;
-  z-index: 1;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.wrapper > .intro * {
+.landing main .intro-wrapper .intro * {
   transition: all 0.15s linear;
 }
-.wrapper > .tagline {
+.landing main .intro-wrapper .intro .menu {
+  /* offset-x | offset-y | blur-radius | color */
+  margin-right: 1rem;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex: 1 1;
+  flex: 1 1;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  font-family: "Inconsolata", monospace;
+}
+.landing main .intro-wrapper .intro .menu .menu__item {
+  margin: 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 400;
+  border-bottom: 2px solid transparent;
+}
+.landing main .intro-wrapper .intro .menu .menu__item:hover {
+  cursor: pointer;
+  border-bottom: 2px solid var(--text-color);
+}
+.landing main .intro-wrapper .tagline {
   font-size: 1.375rem;
   margin: 1.5rem 0;
   font-weight: 300;
   z-index: 1;
 }
-
-.social {
+.landing .social {
   padding: 0.25rem 0;
   font-size: 3rem;
+  text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.51);
 }
-.social a {
+.landing .social a {
   padding: 0 0.625rem;
 }
-.social a.devto svg {
+.landing .social a.devto svg {
   margin-bottom: -0.25rem;
   width: 2.7rem;
   height: 2.7rem;
+  color: transparent !important;
 }
-.social.animate-icons a {
+.landing .social.animate-icons a {
   display: inline-block;
-  -webkit-transform: perspective(1px) translateZ(0);
-  transform: perspective(1px) translateZ(0);
-  -webkit-box-shadow: 0 0 1px transparent;
-  box-shadow: 0 0 1px transparent;
 }
-.social.animate-icons a:hover, .social.animate-icons a:focus, .social.animate-icons a:active {
+.landing .social.animate-icons a:hover, .landing .social.animate-icons a:focus, .landing .social.animate-icons a:active {
   -webkit-animation-name: icon-wobble;
   animation-name: icon-wobble;
   -webkit-animation-duration: 0.75s;

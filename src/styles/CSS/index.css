@@ -38,6 +38,7 @@ img {
 
 html {
   font-size: 12px;
+  scroll-behavior: smooth;
 }
 
 @media (min-width: 376px) {
@@ -70,11 +71,22 @@ h6,
 p,
 ol,
 ul {
-  font-weight: 300;
+  font-weight: 200;
+  -webkit-touch-callout: none;
+  /* iOS Safari */
+  -webkit-user-select: none;
+  /* Safari */
+  -khtml-user-select: none;
+  /* Konqueror HTML */
+  -moz-user-select: none;
+  /* Old versions of Firefox */
+  -ms-user-select: none;
+  /* Internet Explorer/Edge */
+  user-select: none;
 }
 
 h1 {
-  font-weight: 900;
+  font-weight: 200;
 }
 
 .content-grid {
@@ -103,4 +115,8 @@ h1 {
 
 a {
   text-decoration: none;
+}
+
+#root {
+  display: flex;
 }

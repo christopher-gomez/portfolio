@@ -10,17 +10,38 @@
   justify-content: center;
   z-index: 1;
   scroll-margin: 3em;
+  padding: 0 3em;
+  transition: all .25s ease-in-out;
+
+  >*{
+    transition: all .25s ease-in-out;
+  }
 
   h1 {
     padding: 1rem 0;
     font-size: 3rem;
     z-index: 1;
+    font-weight: 200;
   }
 
   .content-grid {
     -ms-flex: auto;
     flex: auto;
     z-index: 1;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+
+    .title {
+      display: flex;
+      flex-direction: row;
+      flex: auto;
+      align-items: center;
+
+      >* {
+        margin: 0 .25em;
+      }
+    }
   }
 
   .portfolio-wrapper {

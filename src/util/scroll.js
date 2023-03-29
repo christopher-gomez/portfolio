@@ -50,6 +50,8 @@ var calcBottom = function (rect, win) {
 export const calcElemScrollY = (selector) => {
   let element = document.querySelector(selector);
 
+  if (!element) element = document.querySelector("#root");
+
   var win = { height: window.innerHeight };
   var rect = element.getBoundingClientRect();
 

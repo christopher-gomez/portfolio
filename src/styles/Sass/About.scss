@@ -1,23 +1,25 @@
 .about {
-  min-height: 100vh;
-  display: -ms-flexbox;
   display: flex;
-  -ms-flex: 0 1 auto;
   flex: 0 1 auto;
-  -ms-flex-direction: column;
   flex-direction: column;
-  -ms-flex-pack: center;
+  padding: 0 3em;
+  scroll-margin: 3.25em;
+  min-height: 100vh;
   justify-content: center;
   z-index: 1;
 
+  >* {
+    z-index: 1;
+  }
+
   h1 {
-    padding: 1rem 0;
     font-size: 3rem;
+    font-weight: 100;
   }
 
   a {
     color: black;
-    font-weight: bold;
+    font-weight: 200;
   }
 
   a:hover {
@@ -34,29 +36,40 @@
 
   }
 
-  .content {
-    flex: auto;
+  h1 {
+    color: black;
   }
 
-  .content-grid {
-    h1 {
-      color: black;
-    }
+  margin: 0 auto;
 
-    margin: 0 auto;
-
-    .contact {
-      margin-bottom: .5rem;
-    }
+  .contact {
+    margin: 0 .25em;
+    margin-bottom: .5rem;
   }
 
   .wrapper {
+    .content {
+      flex: auto;
+      margin: 0 .5em;
+      font-size: 1.2rem;
+      line-height: 2rem;
+      color: black;
+      margin-bottom: 1em;
+      color: rgb(11, 11, 11);
+
+      p {
+        font-weight: 300;
+        color: rgb(11, 11, 11);
+        padding: 0.25rem 0;
+      }
+    }
+
     .resume {
       font-size: 1rem;
       line-height: 1.5rem;
 
       h1 {
-        font-size: 2rem;
+        font-size: .75rem;
         margin-bottom: .5rem;
         text-decoration: underline;
       }
@@ -75,20 +88,6 @@
     }
   }
 
-  .wrapper .content {
-    font-size: 1.25rem;
-    line-height: 2rem;
-    color: black;
-    margin-bottom: 1em;
-    color: rgb(11, 11, 11);
-
-    p {
-      font-weight:bold;
-      color: rgb(11, 11, 11);
-      padding: 0.25rem 0;
-    }
-  }
-
   .content.skills {
     div {
       margin: 0.5em auto;
@@ -97,7 +96,7 @@
     h3 {
       border-bottom: 1.25px solid var(--text-color);
       display: inline-block;
-      font-weight: 500;
+      font-weight: 300;
     }
   }
 

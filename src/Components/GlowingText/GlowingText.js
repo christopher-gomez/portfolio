@@ -9,7 +9,6 @@ export default ({ letters, delay }) => {
     clearTimeout(timeoutRef.current);
 
     timeoutRef.current = setTimeout(() => {
-      console.log('timeout')
       if (div.current) {
         div.current.className = "glowing-text";
       }

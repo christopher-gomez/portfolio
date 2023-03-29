@@ -1,0 +1,10 @@
+.text-icon {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+.text-icon > * {
+  display: flex;
+  flex: auto;
+  margin: 0 0.25em;
+}

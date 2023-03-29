@@ -1,0 +1,35 @@
+.transition {
+  pointer-events: none;
+  padding: 1em;
+}
+.transition.fade {
+  opacity: 1;
+}
+.transition.fade.in {
+  animation: fade-in 1s linear;
+  pointer-events: inherit;
+}
+.transition.fade.out {
+  animation: fade-out 2s linear;
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}

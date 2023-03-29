@@ -4,11 +4,11 @@
   right: 0;
   cursor: pointer;
   z-index: 2;
+  padding: 0.25rem 1rem;
 }
 .scroll-top .arrow {
   text-align: center;
   margin: 0 auto;
-  padding: 0.5rem 1rem;
 }
 .scroll-top .arrow .to-top {
   text-align: center;

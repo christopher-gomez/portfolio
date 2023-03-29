@@ -1,16 +1,21 @@
 .scroll {
-  cursor: pointer;
+  display: flex;
 }
 .scroll .arrow {
   text-align: center;
   margin: 2rem auto;
   margin-top: 2.5rem;
   padding-bottom: 0.5rem;
+  transition: all 2s linear;
 }
 .scroll .arrow .scroll-text {
   text-align: center;
   font-size: 0.5rem;
   margin-bottom: -0.125rem;
+}
+.scroll .arrow svg {
+  cursor: pointer;
+  transition: all 0.25s linear;
 }
 .scroll .bounce {
   -webkit-animation: bounce 2s infinite;

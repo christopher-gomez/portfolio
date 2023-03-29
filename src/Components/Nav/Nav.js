@@ -1,89 +1,107 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "../../styles/CSS/Nav.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaintBrush } from "@fortawesome/free-solid-svg-icons";
 import { toElement as scrollToElement } from "../../util/scroll";
+import { hexToRgb } from "../../util/color";
 
-export default class Nav extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleScroll = this.handleScroll.bind(this);
-    this.state = {
-      isSticky: false,
-    };
-  }
+export default (props) => {
+  const [state, setState] = useState({ isSticky: false });
+  const nav = useRef();
 
-  componentDidMount() {
-    window.addEventListener("scroll", this.handleScroll);
-  }
+  const elementInView = (el) => {
+    if (el == undefined) return false;
+    var rect = el.getBoundingClientRect();
+    return (
+      rect.y + rect.height - rect.height > 0 || rect.y > window.innerHeight
+    );
+  };
 
-  componentWillUnmount() {
-    window.removeEventListener("scroll", this.handleScroll);
-  }
-
-  handleScroll() {
-    if (window.pageYOffset > this.nav.offsetTop) {
-      this.setState({
-        ...this.state,
+  const handleScroll = () => {
+    if (!elementInView(document.querySelector(".intro-wrapper"))) {
+      setState((state) => ({
+        ...state,
         isSticky: true,
-      });
+      }));
     } else {
-      this.setState({
-        ...this.state,
+      setState((state) => ({
+        ...state,
         isSticky: false,
-      });
+      }));
     }
-  }
+  };
 
-  scrollToPage(pageSelector) {
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const stickyClass = useRef("nav");
+
+  useEffect(() => {
+    stickyClass.current = state.isSticky
+      ? "scrolled fade-in-top sticky"
+      : "fade-out-top";
+  }, [state.isSticky]);
+
+  const scrollToPage = (pageSelector) => {
     const nextPage = document.querySelector(pageSelector);
     scrollToElement(nextPage);
-  }
+  };
 
-  render() {
-    const stickyClass = this.state.isSticky ? "nav sticky" : "nav";
-    const stickyStyles = this.state.isSticky
-      ? { backgroundColor: `var(--bg-color)`, color: "black" }
-      : { backgroundColor: "var(--bg-color)", color: "black" };
-
-    return (
-      <header>
-        <nav
-          className={stickyClass}
-          ref={(elem) => {
-            this.nav = elem;
-          }}
-          style={stickyStyles}
+  const rgb = hexToRgb(props.color.bgColor);
+  const stickyStyles =
+    state.isSticky || props.forceSticky
+      ? {
+          backgroundColor: rgb
+            ? `rgba(${rgb.r},${rgb.g},${rgb.b},1)`
+            : `var(--bg-color)`,
+          color: "black",
+        }
+      : {
+          backgroundColor: rgb
+            ? `rgba(${rgb.r},${rgb.g},${rgb.b},.1)`
+            : `var(--bg-color)`,
+          color: "black",
+        };
+  return (
+    <header>
+      <nav
+        className={`nav js-scroll ${stickyClass.current}`}
+        ref={nav}
+        style={stickyStyles}
+      >
+        <div
+          className="left-container"
+          onClick={(e) => scrollToPage(".landing")}
         >
-          <div className="left-container">
-            <p>Christopher Gomez</p>
-            <div
-              onClick={() => this.props.toggleRandomTheme()}
-              className="magic-wand bounce-xy"
-            >
-              <FontAwesomeIcon
-                style={{ color: "var(--text-color)" }}
-                icon={faPaintBrush}
-              />
-              <div className="magic-text">Color Me!</div>
-            </div>
+          <p>Christopher Gomez</p>
+          {/* <div
+            onClick={() => props.toggleRandomTheme()}
+            className="magic-wand bounce-xy"
+          >
+            <FontAwesomeIcon
+              style={{ color: "var(--text-color)" }}
+              icon={faPaintBrush}
+            />
+            <div className="magic-text">Color Me!</div>
+          </div> */}
+        </div>
+        <div className="menu">
+          <div
+            className="menu__item"
+            onClick={(e) => scrollToPage(".portfolio")}
+          >
+            Portfolio
           </div>
-          <div className="menu">
-            <div
-              className="menu__item"
-              onClick={(e) => this.scrollToPage(".portfolio")}
-            >
-              Portfolio
-            </div>
-            <div
-              className="menu__item"
-              onClick={(e) => this.scrollToPage(".about")}
-            >
-              About
-            </div>
+          <div className="menu__item" onClick={(e) => scrollToPage(".about")}>
+            About
           </div>
-        </nav>
-      </header>
-    );
-  }
-}
+        </div>
+      </nav>
+    </header>
+  );
+};

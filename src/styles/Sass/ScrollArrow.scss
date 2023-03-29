@@ -1,16 +1,22 @@
 .scroll {
-  cursor: pointer;
+  display: flex;
 
   .arrow {
     text-align: center;
     margin: 2rem auto;
     margin-top: 2.5rem;
     padding-bottom: 0.5rem;
+    transition: all 2s linear;
 
     .scroll-text {
       text-align: center;
       font-size: 0.5rem;
       margin-bottom: -0.125rem;
+    }
+
+    svg {
+      cursor: pointer;
+      transition: all .25s linear;
     }
   }
 

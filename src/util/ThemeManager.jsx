@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import themes from "../styles/theme";
 
 export default ({ children }) => {
   const [state, setState] = useState({
@@ -6,69 +7,25 @@ export default ({ children }) => {
   });
 
   useEffect(() => {
-    toggleRandomTheme(["her-red", "vivid-blue", "orange", "dark-slate-blue"]);
+    // toggleRandomTheme(["dark-slate-blue"]);
   }, []);
 
-  const toggleRandomTheme = (filter) => {
-    let themes = [
-      // her red
-      {
-        name: "her-red",
-        textColor: "#B23D2B",
-        bgColor: "#fff",
-        altBg: "#2C303B",
-        altText: "#fff",
-      },
-      //   vivid blue
-      {
-        name: "vivid-blue",
-        textColor: "#0074D9",
-        bgColor: "#fff",
-        altBg: "#2C303B",
-        altText: "#fff",
-      },
-      //   seafoam green
-      {
-        name: "sea-foam-green",
-        textColor: "#415554",
-        bgColor: "#fff",
-        altBg: "#2C303B",
-        altText: "#fff",
-      },
-      //   dark slate blue
-      {
-        name: "dark-slate-blue",
-        textColor: "#2C303B",
-        bgColor: "#fff",
-        altBg: "#2C303B",
-        altText: "#fff",
-      },
-      // //   orange
-      // {
-      //   name: "orange",
-      //   textColor: "#FF851B",
-      //   bgColor: "#fff",
-      //   altBg: "#FF851B",
-      //   altText: "#fff",
-      // },
-      //   light blue
-      //   {
-      //     name: "light-blue",
-      //     textColor: "#5EA9BE",
-      //     bgColor: "#fff",
-      //     altBg: "#5EA9BE",
-      //     altText: "#fff",
-      //   },
-      //   facebook blue
-    //   {
-    //     name: "facebook-blue",
-    //     textColor: "#00537D",
-    //     bgColor: "#fff",
-    //     altBg: "#00537D",
-    //     altText: "#fff",
-    //   },
-    ];
+  useEffect(() => {
+    if (state.color === null || state.color === undefined) {
+      toggleRandomTheme();
+      return;
+    }
 
+    const color = state.color;
+
+    let root = document.documentElement;
+    root.style.setProperty("--text-color", color.textColor);
+    root.style.setProperty("--bg-color", color.bgColor);
+    root.style.setProperty("--alt-bg", color.altBg);
+    root.style.setProperty("--alt-text", color.altText);
+  }, [state.color]);
+
+  const toggleRandomTheme = (filter) => {
     let t;
     if (filter !== undefined) {
       t = themes.filter((x) => {
@@ -84,6 +41,20 @@ export default ({ children }) => {
       t = themes;
     }
 
+    if (t.length == 0) return;
+
+    if (t.length == 1 && state.color !== null) {
+      // this triggers an effect that re-selects and re-renders with the same theme, in case any
+      // thing like animations are waiting on a new color
+      setState((s) => ({ ...s, color: null }));
+      return;
+    }
+
+    if (t.length == 1) {
+      setState((state) => ({ ...state, color: t[0] }));
+      return;
+    }
+
     let color = t[Math.floor(Math.random() * t.length)];
 
     if (state.color !== null) {
@@ -95,12 +66,6 @@ export default ({ children }) => {
         color = t[Math.floor(Math.random() * t.length)];
       }
     }
-
-    let root = document.documentElement;
-    root.style.setProperty("--text-color", color.textColor);
-    root.style.setProperty("--bg-color", color.bgColor);
-    root.style.setProperty("--alt-bg", color.altBg);
-    root.style.setProperty("--alt-text", color.altText);
 
     setState((state) => ({ ...state, color: color }));
     //root.style.setProperty('--highlight-color', highlightColor);
