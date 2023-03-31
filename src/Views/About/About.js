@@ -153,8 +153,7 @@ export default () => {
             <div
               className="content"
               style={{
-                direction: "rtl",
-                textAlign: "justify",
+                textAlign: "right",
                 marginLeft: "10%",
                 paddingRight: "1em",
               }}
@@ -176,7 +175,13 @@ export default () => {
                 As a die-hard Laker and NBA fan, you can usually find me
                 cheering on my team or pouring through advanced analytics.
               </p>
-              <p></p>
+              <p>
+                I'm happiest when I'm making and eating fresh homemade pasta
+                with a nice glass of red wine. My dream is to own a vineyard and
+                spend my days entertaining and eating. Che bello!
+              </p>
+              <p>Alla prossima!</p>
+              <p>🍝🍇🍷 </p>
             </div>
           </AccordionDetails>
         </Accordion>

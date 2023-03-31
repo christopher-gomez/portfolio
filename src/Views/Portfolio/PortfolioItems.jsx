@@ -26,7 +26,7 @@ import engine from "../../Assets/images/engine.png";
 import aw from "../../Assets/images/AW.avif";
 import playshow from "../../Assets/images/playshow.jpg";
 import portal from "../../Assets/images/portal.jpg";
-import twit from '../../Assets/images/twit.png'
+import twit from "../../Assets/images/twit.png";
 import { Watson } from "../../Assets/svg";
 
 const items = [
@@ -141,9 +141,9 @@ const items = [
     img: twit,
     title: "Twitter Bot Manager",
     description:
-      "A NPM package built to bypass the lengthy Twitter bot setup stage and get straight to defining bot actions. "+
-      "Built with Node, the package sets up a server that hooks into Twitter web events and allows any number of account's to listen "+
-      "and respond. Essentially a framework to write Twitter-based actions based on pre-defined events while abstracting away "+
+      "A NPM package built to bypass the lengthy Twitter bot setup stage and get straight to defining bot actions. " +
+      "Built with Node, the package sets up a server that hooks into Twitter web events and allows any number of account's to listen " +
+      "and respond. Essentially a framework to write Twitter-based actions based on pre-defined events while abstracting away " +
       "the network and bot lifecycle management.",
     icons: [
       { type: "font-awesome", icon: faNode },
@@ -157,6 +157,28 @@ const items = [
       {
         title: "NPM",
         href: "https://www.npmjs.com/package/twitter-bot-manager",
+      },
+    ],
+  },
+  {
+    img: jupyter,
+    title: "Spotify ML",
+    description:
+      "Machine learning with Spotify to emulate Spotify's Discovery feature. Classification and Prediction based on user's listening habits, integrated with Amazon Alexa.",
+    icons: [
+      { type: "font-awesome", icon: faPython },
+      { type: "mfizz", icon: "icon-shell" },
+      { type: "font-awesome", icon: faNode },
+      { type: "font-awesome", icon: faSpotify },
+    ],
+    links: [
+      {
+        title: "Jupyter Notebook",
+        href: "https://github.com/christopher-gomez/DJ-Spotify/blob/master/DJ%20Spotify.ipynb",
+      },
+      {
+        title: "Github",
+        href: "https://github.com/christopher-gomez/DJ-Spotify",
       },
     ],
   },
@@ -194,34 +216,11 @@ const items = [
     links: [
       {
         title: "Website",
-        href: "https://spotilize.herokuapp.com/",
+        href: "https://spotilize.uc.r.appspot.com/",
       },
       {
         title: "Github",
-        href: "https://github.com/christophgomez/Spotify-VIsualizer",
-      },
-    ],
-  },
-  {
-    img: syn,
-    title: "Synesthesiafy",
-    description:
-      "A Node, Express, React web app that explores the relationship between music and color using Spotify",
-    icons: [
-      { type: "font-awesome", icon: faNode },
-      { type: "font-awesome", icon: faReact },
-      { type: "font-awesome", icon: faSpotify },
-      { type: "mfizz", icon: "icon-bootstrap" },
-      { type: "font-awesome", icon: faCss3Alt },
-    ],
-    links: [
-      {
-        title: "Website",
-        href: "https://synesthesiafy.herokuapp.com/",
-      },
-      {
-        title: "Github",
-        href: "https://github.com/christopher-gomez/synesthesiafy",
+        href: "https://github.com/christopher-gomez/Spotify-VIsualizer",
       },
     ],
   },
@@ -239,7 +238,7 @@ const items = [
     links: [
       {
         title: "Website",
-        href: "https://nbarosters.herokuapp.com/",
+        href: "https://aerobic-ward-301402.wl.r.appspot.com/",
       },
       {
         title: "Github",
@@ -269,23 +268,7 @@ const items = [
       },
       {
         title: "Github",
-        href: "https://github.com/christophgomez/smooth-load",
-      },
-    ],
-  },
-  {
-    img: city,
-    title: "Tower Defense Builder",
-    description:
-      "A procedurally generated, 3D crafting/survival game. Created with C#, Unity, and Blender.",
-    icons: [
-      { type: "fizz", icon: "icon-csharp" },
-      { type: "fizz", icon: "icon-unity" },
-    ],
-    links: [
-      {
-        title: "Github",
-        href: "https://github.com/christophgomez/UnityRPGCityBuilderTowerDefenseCrafter",
+        href: "https://github.com/christopher-gomez/smooth-load",
       },
     ],
   },
@@ -306,32 +289,51 @@ const items = [
     links: [
       {
         title: "Github",
-        href: "https://github.com/christophgomez/SmartDJ",
+        href: "https://github.com/christopher-gomez/SmartDJ",
       },
     ],
   },
   {
-    img: jupyter,
-    title: "Spotify ML",
+    img: syn,
+    title: "Synesthesiafy",
     description:
-      "Machine Learning with Spotify to simulate Spotify's Discovery feature. Classification / Prediction based on user's listening habits, integrated with Amazon Alexa.",
+      "A Node, Express, React web app that explores the relationship between music and color using Spotify",
     icons: [
-      { type: "font-awesome", icon: faPython },
-      { type: "mfizz", icon: "icon-shell" },
       { type: "font-awesome", icon: faNode },
+      { type: "font-awesome", icon: faReact },
       { type: "font-awesome", icon: faSpotify },
+      { type: "mfizz", icon: "icon-bootstrap" },
+      { type: "font-awesome", icon: faCss3Alt },
     ],
     links: [
-      {
-        title: "Jupyter Notebook",
-        href: "https://github.com/christophgomez/DJ-Spotify/blob/master/DJ%20Spotify.ipynb",
-      },
+      // {
+      //   title: "Website",
+      //   href: "https://synesthesiafy.herokuapp.com/",
+      // },
       {
         title: "Github",
-        href: "https://github.com/christophgomez/DJ-Spotify",
+        href: "https://github.com/christopher-gomez/synesthesiafy",
       },
     ],
   },
+
+  {
+    img: city,
+    title: "Tower Defense Builder",
+    description:
+      "A procedurally generated, 3D crafting/survival game. Created with C#, Unity, and Blender.",
+    icons: [
+      { type: "fizz", icon: "icon-csharp" },
+      { type: "fizz", icon: "icon-unity" },
+    ],
+    links: [
+      {
+        title: "Github",
+        href: "https://github.com/christopher-gomez/UnityRPGCityBuilderTowerDefenseCrafter",
+      },
+    ],
+  },
+
   {
     img: tree,
     title: "Generative Art",

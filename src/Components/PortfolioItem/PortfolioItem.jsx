@@ -280,8 +280,8 @@ const PortfolioItem = (props) => {
         style={
           isBlurred
             ? {
-                opacity: 0.75,
-                transform: `scale(.9,.9)`,
+                opacity: 0.9,
+                // transform: `scale(.95,.95)`,
                 transition: "all .1s ease-in-out",
               }
             : {}

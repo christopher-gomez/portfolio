@@ -24,7 +24,7 @@ export default ({ color, onCardHover }) => {
     hoveredIndex: 0,
     ignoreHovered: false,
     isCondensed: false,
-    allowHoverFocus: true,
+    allowHoverFocus: false,
   });
 
   const timer = useRef();
@@ -100,7 +100,7 @@ export default ({ color, onCardHover }) => {
           right: 0,
           top: 0,
           bottom: 0,
-          backgroundColor: "rgba(0,0,0,.5)",
+          backgroundColor: "rgba(0,0,0,.3)",
           opacity:
             (!state.ignoreHovered && state.hovered) || state.showingModal
               ? 0.9
@@ -153,7 +153,7 @@ export default ({ color, onCardHover }) => {
                 setState((s) => ({ ...s, isCondensed: !s.isCondensed }))
               }
             />
-            <FontAwesomeTextIcon
+            {/* <FontAwesomeTextIcon
               icon={state.allowHoverFocus ? faToggleOn : faToggleOff}
               text={
                 state.allowHoverFocus ? "Hover Focus On" : "Hover Focus Off"
@@ -174,7 +174,7 @@ export default ({ color, onCardHover }) => {
               onClick={() =>
                 setState((s) => ({ ...s, allowHoverFocus: !s.allowHoverFocus }))
               }
-            />
+            /> */}
           </div>
 
           <div className="portfolio-wrapper">

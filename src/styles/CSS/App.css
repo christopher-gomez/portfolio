@@ -32,6 +32,9 @@
 .App.hovered .nav * {
   color: black !important;
 }
+.App.hovered .about .MuiPaper-root {
+  background-color: transparent !important;
+}
 
 .row {
   display: flex;

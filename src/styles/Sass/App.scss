@@ -40,6 +40,12 @@
         color: black !important;
       }
     }
+
+    .about {
+      .MuiPaper-root {
+        background-color: transparent !important;
+      }
+    }
   }
 }
 
@@ -243,7 +249,7 @@
   }
 
   25% {
-    transform: scale(1,1);
+    transform: scale(1, 1);
   }
 
   100% {

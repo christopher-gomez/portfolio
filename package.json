@@ -29,10 +29,9 @@
     "dev": "concurrently --kill-others \"npm run start-react\" \"npm run sass\"",
     "start-react": "react-scripts start",
     "build": "react-scripts build",
+    "postbuild": "firebase deploy",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
     "sass": "sass src/styles/Sass:src/styles/CSS --watch --no-source-map",
     "login": "firebase login"
   },
