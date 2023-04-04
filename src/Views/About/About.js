@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../../styles/CSS/About.css";
-import ScrollArrow from "../../Components/ScrollArrow/ScrollArrow";
-import Slideshow from "../../Components/Slideshow/Slideshow";
 import resume from "../../Assets/christopher_gomez_resume.pdf";
-import { ReactMarkdown } from "react-markdown/lib/react-markdown";
 import Link from "../../Components/Link";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { faArrowDown, faExpand } from "@fortawesome/free-solid-svg-icons";
@@ -43,26 +40,26 @@ export default () => {
               className="content"
               style={{ marginRight: "10%", paddingLeft: ".5em" }}
             >
-              <p>
-                I am an Emmy-winning full-stack software engineer currently
-                working at a video game studio, with expertise in React, Node,
-                Unity, and .NET. My proficiency in C++ and Python also adds to
+<p>
+                I'm an Emmy-award winning full-stack software engineer currently
+                working at the video game studio Wayforward, with expertise in React, Node,
+                .NET, and Unity. I also have proficiency in C++ and Python, adding to
                 my diverse skill set.
               </p>
               <p>
                 I enjoy building development tools, frameworks, reusable
-                components, and base classes and writing documentation to
+                components, as well as base classes and writing documentation to
                 improve productivity and development time.
               </p>
               <p>
-                My focus is on creating accessible and enjoyable user
+                My primary focus has been creating accessible and enjoyable user
                 experiences through thoughtful design and creative expression,
                 particularly at the intersection of web development,
                 human-computer interaction, and multimedia.
               </p>
               <p>
                 I believe in the importance of both front-end and back-end
-                development to create a truly exceptional user experience. I am
+                development, creating a truly exceptional user experience. I'm
                 passionate about finding innovative ways to blur the line
                 between art and tool, with a particular fascination for pushing
                 the boundaries of software applications and human-computer
@@ -72,13 +69,13 @@ export default () => {
               </p>
               <p>
                 I have a talent for designing visually appealing websites and
-                interactive graphics and I enjoy tackling complex challenges,
+                interactive graphics and enjoy tackling complex challenges,
                 from fine-tuning machine learning models to writing shaders and
                 generative art.
               </p>
               <p>
-                As a strong team member, I am reliable, enjoy collaboration, am
-                always open to learning new things, and have an affinity for
+                As a team member, I am reliable, collaborative, and
+                always open to learning new things. I also have an affinity for
                 teaching others. I'm excited to continue creating and innovating
                 in the field of software engineering.
               </p>

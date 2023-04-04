@@ -279,7 +279,7 @@ export default ({ drawX, eraseX, isDrawing, isErasing, color, hack }) => {
               <GlowingText delay={1000} letters={tagline}/>
             </div> */}
           <div className="social animate-icons js-scroll" ref={linkContainer}>
-            <Link newTab href="https://github.com/christophgomez">
+            <Link newTab href="https://github.com/christopher-gomez">
               <FontAwesomeIcon
                 style={{
                   transition: "color .25s ease-out",
