@@ -2,4 +2,4 @@
 
 A static personal portfolio website.
 
-Fully responsive, reated from scratch, with no UI libraries or frameworks used, except React of course.
+Fully responsive, created from scratch with React, Material-UI, and love.
