@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css?family=Raleway&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poiret+One&display=swap");
 :root {
   --text-color: #ff4136;
   --bg-color: #fff;
@@ -6,9 +7,19 @@
   --alt-text: #fff;
 }
 
+body::-webkit-scrollbar {
+  display: none !important;
+}
+
+.Outlined-Text {
+  font-family: "Poiret One", sans-serif !important;
+  font-weight: 400;
+  font-style: normal;
+}
+
 .App {
   color: black;
-  background: var(--bg-color);
+  background: black !important;
   font-family: "Noto Sans", sans-serif;
   display: flex;
   flex: 0 1 auto;
@@ -26,14 +37,121 @@
   opacity: 0.5;
   height: 100%;
 }
-.App.hovered * {
+
+.blur-container {
+  background: rgba(44, 48, 59, 0.6862745098);
+  border-radius: 0.5em;
+  padding: 0.5em 1em;
+  width: fit-content !important;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  opacity: 1;
+  transition: background 1.5s ease-out, opacity 0.5s ease-out, border 0.5s ease-out, color 1.75s ease-out;
+  animation: blur-in 3s 1s ease-out forwards;
+  color: rgb(255, 255, 255) !important;
+  /* Let's define an animation: */
+}
+.blur-container * {
   color: white !important;
 }
-.App.hovered .nav * {
-  color: black !important;
+.blur-container.slide-in-left {
+  animation: slide-in-left-then-blur 1s ease-out forwards;
 }
-.App.hovered .about .MuiPaper-root {
-  background-color: transparent !important;
+.blur-container.slide-out-left {
+  opacity: 0;
+  background: rgba(255, 255, 255, 0);
+  animation: slide-out-left-while-fading 0.5s 0.1s ease-out forwards;
+}
+.blur-container.slide-in-right {
+  animation: slide-in-right-then-blur 0.5s ease-out forwards;
+}
+.blur-container.dark {
+  background: rgba(0, 0, 0, 0.5);
+  border: 3px solid rgba(0, 0, 0, 0.5);
+}
+.blur-container.dark p,
+.blur-container.dark h1,
+.blur-container.dark h2,
+.blur-container.dark h3,
+.blur-container.dark h4,
+.blur-container.dark h5,
+.blur-container.dark h6 {
+  color: white !important;
+}
+.blur-container.yellow-border {
+  border: 3px solid #ffee00;
+}
+.blur-container.no-border {
+  border: none;
+}
+.blur-container.shadow {
+  box-shadow: 0 0px 10px 0px rgba(0, 0, 0, 0.5);
+}
+.blur-container.hidden-complete {
+  opacity: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.5s ease-in, opacity 0.5s ease-in;
+  animation: blur-out 0.2s 0.5s ease-in forwards;
+  /* Important */
+}
+.blur-container.hidden-bg {
+  background: rgba(175, 194, 213, 0.25);
+  color: rgba(255, 255, 255, 0.094);
+  border: none;
+  transition: background 0.5s ease-in, border 0.5s ease-in, color 0.5s ease-in;
+  animation: blur-out 0.2s 0.5s ease-in forwards;
+  /* Important */
+}
+@keyframes slide-in-left-then-blur {
+  0% {
+    transform: translateX(-100vw);
+    backdrop-filter: blur(0px);
+  }
+  50% {
+    transform: translateX(0);
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    backdrop-filter: blur(20px);
+  }
+}
+@keyframes slide-out-left-while-fading {
+  0% {
+    transform: translateX(0);
+    backdrop-filter: blur(20px);
+  }
+  95% {
+    backdrop-filter: blur(20px);
+  }
+  100% {
+    transform: translateX(-100vw);
+    backdrop-filter: blur(0px);
+  }
+}
+@keyframes slide-in-right-then-blur {
+  from {
+    transform: translateX(100vw);
+    backdrop-filter: blur(0px);
+  }
+  to {
+    transform: translateX(0);
+    backdrop-filter: blur(20px);
+  }
+}
+@keyframes blur-in {
+  0% {
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    backdrop-filter: blur(8px);
+  }
+}
+@keyframes blur-out {
+  from {
+    backdrop-filter: blur(8px);
+  }
+  to {
+    backdrop-filter: blur(0px);
+  }
 }
 
 .row {
@@ -72,35 +190,47 @@
 }
 
 .fade-out-top {
-  animation: fade-out-top 1s ease-in-out both;
+  animation: fade-out-top 1.5s ease-out forwards;
 }
 
 .fade-in {
-  animation: fade-in 1s ease-in-out both;
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.fade-out {
+  animation: fade-out 0.5s ease-in forwards;
 }
 
 .fade-in-bottom {
-  animation: fade-in-bottom 1s ease-in-out both;
+  animation: fade-in-bottom 1.5s ease-out forwards;
 }
 
 .fade-in-top {
-  animation: fade-in-top 1s ease-in-out both;
+  animation: fade-in-top 0.5s ease-out both;
 }
 
-.slide-left {
-  animation: slide-in-left 1s ease-in-out both;
+.slide-in-left {
+  animation: slide-in-left 0.5s ease-out both;
 }
 
-.slide-right {
-  animation: slide-in-right 1s ease-in-out both;
+.slide-out-left {
+  animation: slide-out-left 0.5s ease-in both;
+}
+
+.slide-in-right {
+  animation: slide-in-right 0.5s ease-out both;
+}
+
+.slide-out-right {
+  animation: slide-out-right 0.5s ease-in both;
 }
 
 .fade-in-grow {
-  animation: fade-in-grow 0.5s ease-in-out both;
+  animation: fade-in-grow 0.5s ease-out both;
 }
 
 .fade-out-shrink {
-  animation: fade-out-shrink 0.5s ease-in-out both;
+  animation: fade-out-shrink 0.5s ease-in both;
 }
 
 .hidden-y-scale {
@@ -111,7 +241,7 @@
 
 @keyframes slide-in-left {
   0% {
-    transform: translateX(-100px);
+    transform: translateX(-100vw);
     opacity: 0;
     pointer-events: none;
   }
@@ -119,11 +249,23 @@
     transform: translateX(0);
     opacity: 1;
     pointer-events: unset;
+  }
+}
+@keyframes slide-out-left {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: unset;
+  }
+  to {
+    transform: translateX(-100vw);
+    opacity: 0;
+    pointer-events: none;
   }
 }
 @keyframes slide-in-right {
   0% {
-    transform: translateX(100px);
+    transform: translateX(100vw);
     opacity: 0;
     pointer-events: none;
   }
@@ -133,10 +275,22 @@
     pointer-events: unset;
   }
 }
+@keyframes slide-out-right {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: unset;
+  }
+  100% {
+    transform: translateX(100vw);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
 @keyframes fade-in-bottom {
   0% {
-    transform: translateY(-200px);
-    opacity: 0;
+    transform: translateY(-50px);
+    opacity: 0.7;
     pointer-events: none;
   }
   50% {
@@ -168,7 +322,6 @@
     pointer-events: none;
   }
   99% {
-    transform: translateY(-200px);
     opacity: 0;
   }
   100% {
@@ -187,15 +340,24 @@
     pointer-events: unset;
   }
 }
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+    pointer-events: none;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
 @keyframes fade-in-grow {
   0% {
     opacity: 0;
-    transform: scale(1, 0);
+    transform: scale(0, 0);
     pointer-events: none;
   }
   75% {
-    opacity: 1;
-    transform: scale(1, 1.05);
+    transform: scale(1.5, 1.5);
   }
   100% {
     opacity: 1;
@@ -208,9 +370,6 @@
     opacity: 1;
     transform: scale(1, 1);
     pointer-events: none;
-  }
-  25% {
-    transform: scale(1, 1);
   }
   100% {
     transform: scale(0.25, 0.25);

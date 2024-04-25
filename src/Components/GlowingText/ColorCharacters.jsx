@@ -1,7 +1,7 @@
 import React from "react";
 
 export default React.forwardRef(
-  ({ color, string, characters, ...others }, ref) => {
+  ({ color, string, characters, style, className, ...others }, ref) => {
     if (characters === undefined && string === undefined) return null;
     if (characters === undefined) {
       characters = string.split("");
@@ -14,7 +14,9 @@ export default React.forwardRef(
             <span
               style={{
                 color: color ? color(i) : "inherit",
+                ...style,
               }}
+              className={className}
             >
               {letter}
             </span>

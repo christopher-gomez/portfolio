@@ -1,0 +1,9 @@
+.vertical-timeline .opposite-info-container {
+  background-color: rgba(44, 48, 59, 0.6862745098);
+  backdrop-filter: blur(10px);
+  border-radius: 0.5em;
+  padding: 0.5em 1em;
+  width: fit-content;
+  color: white !important;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+}

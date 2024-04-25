@@ -4,7 +4,6 @@
   flex-direction: column;
   padding: 0 3em;
   scroll-margin: 3.25em;
-  min-height: 100vh;
   justify-content: center;
   z-index: 1;
   margin: 0 auto;
@@ -97,10 +96,47 @@
   object-fit: cover;
   object-position: center;
 }
+.about .personal-accordion-summary {
+  flex-flow: row-reverse;
+}
+.about .personal-accordion-summary > div {
+  flex-flow: row-reverse;
+}
+.about .personal-accordion-summary h2 {
+  text-align: right;
+  display: flex;
+  align-self: flex-start;
+}
 
 @media (min-width: 426px) {
   .about .content-grid {
     width: calc(100% - 2.5rem);
+  }
+}
+@media (max-width: 426px) {
+  .about {
+    padding: 0;
+    padding-top: 2rem;
+  }
+  .about .personal-accordion-summary {
+    flex-flow: row;
+  }
+  .about .personal-accordion-summary > div {
+    flex-flow: row;
+  }
+  .about .personal-accordion-summary h2 {
+    text-align: left;
+    display: flex;
+    align-self: flex-start;
+  }
+  .MuiAccordionDetails-root {
+    padding: 0 !important;
+  }
+  .professional-content,
+  .personal-content {
+    margin: 0 !important;
+    padding: 0 1.5em !important;
+    text-align: left !important;
   }
 }
 @media (min-width: 769px) {

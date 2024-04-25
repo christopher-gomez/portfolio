@@ -9,11 +9,15 @@ nav {
   align-items: center;
   -ms-flex-pack: end;
   justify-content: flex-end;
-  z-index: 99;
+  z-index: 100000;
   pointer-events: none;
+  background: rgba(44, 48, 59, 0.831372549);
+  color: white !important;
+  backdrop-filter: blur(16px);
+  padding: 2rem 1rem;
 }
 nav.sticky {
-  box-shadow: 0 0.1em 0.1em rgba(118, 118, 118, 0.15);
+  box-shadow: 0 0.1em 0.1em rgba(118, 118, 118, 0) !important;
   transition: all 0.25s linear;
   pointer-events: all;
 }

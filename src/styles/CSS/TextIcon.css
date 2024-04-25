@@ -6,5 +6,4 @@
 .text-icon > * {
   display: flex;
   flex: auto;
-  margin: 0 0.25em;
 }

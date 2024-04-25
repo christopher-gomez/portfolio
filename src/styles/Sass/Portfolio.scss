@@ -10,10 +10,10 @@
   justify-content: center;
   z-index: 1;
   scroll-margin: 3em;
-  padding: 0 3em;
   transition: all .25s ease-in-out;
+  width: 100%;
 
-  >*{
+  >* {
     transition: all .25s ease-in-out;
   }
 
@@ -34,13 +34,54 @@
 
     .title {
       display: flex;
-      flex-direction: row;
-      flex: auto;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0 3em;
+      width: auto;
+      margin-top: 5em;
 
-      >* {
-        margin: 0 .25em;
+      > * {
+        margin-bottom: 1em;
       }
+
+      >div {
+        // margin: 0 .25em;
+        padding: 0 1em;
+        border-radius: .5em;
+        backdrop-filter: blur(20px);
+      }
+
+      > button {
+        background-color: rgba(255, 255, 255, 0.35);
+        padding: .25em;
+        border-radius: .5em;
+        margin-left: .5em;
+        backdrop-filter: blur(20px);
+      }
+    }
+
+    *::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    *::-webkit-scrollbar {
+      width: .5em;
+      scrollbar-gutter: stable both-edges;
+      scrollbar-width: thin;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background-color: #888;
+    }
+
+    /* Hide scroll bars in Firefox */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #888 transparent;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: transparent;
     }
   }
 
@@ -52,17 +93,21 @@
     -ms-flex-pack: center;
     justify-content: center;
     z-index: 1;
+    flex: 1 1;
+    justify-items: center;
+    align-content: center;
+
+
   }
 }
 
-@media (max-width: 425px) {
+@media (max-width: 426px) {
   .portfolio {
-    padding-top: 3rem;
+    padding: 0;
+    padding-top: 2rem;
   }
-}
 
-@media (max-width: 425px) {
-  .portfolio .portfolio-wrapper {
+  .portfolio-wrapper {
     -ms-flex-direction: column;
     flex-direction: column;
     -ms-flex-align: center;

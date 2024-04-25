@@ -1,0 +1,11 @@
+.vertical-timeline {
+    .opposite-info-container {
+        background-color: #2c303baf;
+        backdrop-filter: blur(10px);
+        border-radius: .5em;
+        padding: .5em 1em;
+        width: fit-content;
+        color: white !important;
+        border: 3px solid rgba(255, 255, 255, 0.85);
+    }
+}

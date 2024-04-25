@@ -1,16 +1,15 @@
 .transition {
   pointer-events: none;
-  padding: 1em;
 }
 .transition.fade {
   opacity: 1;
 }
 .transition.fade.in {
-  animation: fade-in 1s linear;
+  animation: fade-in 0.5s ease-out;
   pointer-events: inherit;
 }
 .transition.fade.out {
-  animation: fade-out 2s linear;
+  animation: fade-out 0.5s ease-in;
   opacity: 0;
   pointer-events: none;
 }

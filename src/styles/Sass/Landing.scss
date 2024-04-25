@@ -22,7 +22,7 @@
     -ms-flex-pack: center;
     padding: 3.25rem 1.5rem 1rem;
     text-align: center;
-    color: black;
+    color: rgb(0, 0, 0);
     z-index: 1;
 
     .intro-wrapper {
@@ -40,15 +40,19 @@
       margin: auto;
       padding: 1.5rem;
       border-radius: 1em;
+      // border-radius: 1em;
       // backdrop-filter: blur(2px);
+      // background: rgba(255, 255, 255, 0.505);
+      // backdrop-filter: blur(10px);
+      // transition: background 1s ease, backdrop-filter .25s linear .5s;
+      // color: white !important;
 
-      &.blurred {
-        background: rgba(255, 255, 255, 0.1);
-        // backdrop-filter: blur(2px);
-      }
+      // * {
+      //   // color: white !important;
+      // }
 
       .intro {
-        font-size: 3rem;
+        font-size: 3.5rem;
         // font-weight: bold;
         line-height: 4rem;
         padding-bottom: 1rem;
@@ -64,7 +68,7 @@
         .menu {
           /* offset-x | offset-y | blur-radius | color */
           // text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.51);
-          margin-right: 1rem;
+          // margin-right: 1rem;
           display: -ms-flexbox;
           display: flex;
           -ms-flex: 1 1;

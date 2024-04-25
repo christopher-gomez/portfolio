@@ -11,33 +11,31 @@ import { calcElemScrollY } from "./util/scroll";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Markdown from "./Components/Markdown";
 import Transition from "./Components/Transition";
-import { faClose, faExpand } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { toElement } from "./util/scroll";
+// import { faClose, faExpand } from "@fortawesome/free-solid-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { toElement } from "./util/scroll";
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyD_OHWjOAjgBBerM94fKRBHnodFXgswRFU",
-  authDomain: "portfolio-11aff.firebaseapp.com",
-  projectId: "portfolio-11aff",
-  storageBucket: "portfolio-11aff.appspot.com",
-  messagingSenderId: "858628670182",
-  appId: "1:858628670182:web:9d22a19fc7672dd85ef127",
-  measurementId: "G-ZWVB96GQ8E",
+  apiKey: process.env.REACT_APP_FB_API_KEY,
+  authDomain: process.env.REACT_APP_FB_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FB_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FB_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FB_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FB_APP_ID,
+  measurementId: process.env.REACT_APP_FB_MEASUREMENT_ID,
 };
+
 
 // Initialize Firebase
 const fb = initializeApp(firebaseConfig);
 const analytics = getAnalytics(fb);
+console.log(analytics);
 
-const views = [".landing", ".portfolio", ".about"];
+// const views = [".landing", ".portfolio", ".about"];
 
 const App = () => {
   const [state, setState] = useState({
@@ -64,28 +62,28 @@ const App = () => {
   // };
 
   // const curScrollDir = useRef(1);
-  const handleScrollY = () => {
-    let info;
+  // const handleScrollY = () => {
+  //   let info;
 
-    if (state.contentShowing) info = calcElemScrollY(".landing");
-    else info = calcElemScrollY("#root");
+  //   if (state.contentShowing) info = calcElemScrollY(".landing");
+  //   else info = calcElemScrollY("#root");
 
-    var amt = info.percentage <= 0.75 ? 0.75 : info.percentage;
-    var blur = info.percentage <= 0.9 ? (100 - info.percentage * 100) / 10 : 0;
-    setState((state) => ({ ...state, bgOpacity: amt, bgBlur: blur }));
+  //   var amt = info.percentage <= 0.75 ? 0.75 : info.percentage;
+  //   var blur = info.percentage <= 0.9 ? (100 - info.percentage * 100) / 10 : 0;
+  //   setState((state) => ({ ...state, bgOpacity: amt, bgBlur: blur }));
 
-    // const checkScroll = () => {
-    //   if (elementInView(views[state.curView], 100)) {
-    //     isScrolling.current = false;
-    //   } else {
-    //     scrollTimer.current = setTimeout(() => {
-    //       checkScroll();
-    //     }, 500);
-    //   }
-    // };
+  //   // const checkScroll = () => {
+  //   //   if (elementInView(views[state.curView], 100)) {
+  //   //     isScrolling.current = false;
+  //   //   } else {
+  //   //     scrollTimer.current = setTimeout(() => {
+  //   //       checkScroll();
+  //   //     }, 500);
+  //   //   }
+  //   // };
 
-    // if (isScrolling.current) checkScroll();
-  };
+  //   // if (isScrolling.current) checkScroll();
+  // };
 
   const handleResize = () => {
     setState((state) => ({
@@ -99,7 +97,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    window.addEventListener("scroll", handleScrollY);
+    // window.addEventListener("scroll", handleScrollY);
     window.addEventListener("resize", handleResize);
 
     // window.onscroll = function () {
@@ -118,59 +116,67 @@ const App = () => {
     //   }
     // };
 
-    handleScrollY();
+    // handleScrollY();
     handleResize();
 
     return () => {
-      window.removeEventListener("scroll", handleScrollY);
+      // window.removeEventListener("scroll", handleScrollY);
       window.removeEventListener("resize", handleResize);
 
-      window.onscroll = undefined;
+      // window.onscroll = undefined;
     };
   }, []);
+
+  useEffect(() => {
+    if (!state.contentShowing) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [state.contentShowing]);
 
   return (
     <ThemeManager>
       <FractalBg
         allowZenMode={true}
-        bgOpacity={state.bgOpacity}
-        bgBlur={state.bgBlur}
-        onFractalPosition={({
-          drawX,
-          drawY,
-          eraseX,
-          eraseY,
-          isDrawing,
-          isErasing,
-        }) => {
-          if (state.hack) return;
+        // bgOpacity={state.bgOpacity}
+        // bgBlur={state.bgBlur}
+        // onFractalPosition={({
+        //   drawX,
+        //   drawY,
+        //   eraseX,
+        //   eraseY,
+        //   isDrawing,
+        //   isErasing,
+        // }) => {
+        //   if (state.hack || !isDrawing) return;
 
-          setState((state) => ({
-            ...state,
-            drawX: drawX,
-            eraseX: eraseX,
-            isErasing,
-            isDrawing,
-          }));
-        }}
-        onFadeOutBegin={() => {
-          setState((s) => ({ ...s, hack: true }));
-        }}
-        onFadeOutEnd={() => {
-          setState((s) => ({ ...s, hack: false }));
-        }}
+        //   // setState((state) => ({
+        //   //   ...state,
+        //   //   drawX: drawX,
+        //   //   eraseX: eraseX,
+        //   //   isErasing,
+        //   //   isDrawing,
+        //   // }));
+        // }}
+        // onFadeOutBegin={() => {
+        //   setState((s) => ({ ...s, hack: true }));
+        // }}
+        // onFadeOutEnd={() => {
+        //   setState((s) => ({ ...s, hack: false }));
+        // }}
         onToggleUI={(showing) => {
           setState((state) => ({
             ...state,
             contentShowing: !showing,
-            bgOpacity: !showing ? 1 : state.bgOpacity,
+            bgOpacity: /*!showing ? 1 : state.bgOpacity*/ 1,
             forceStickyNav: showing,
           }));
         }}
       />
       <Nav forceSticky={state.forceStickyNav} />
       <Transition visible={state.contentShowing}>
-        <Landing {...state} />
+        <Landing {...state} isZenMode={!state.contentShowing}/>
         <Portfolio
           onCardHover={(hovered) => {
             if (hovered) {

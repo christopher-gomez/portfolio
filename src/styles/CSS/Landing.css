@@ -21,7 +21,7 @@
   -ms-flex-pack: center;
   padding: 3.25rem 1.5rem 1rem;
   text-align: center;
-  color: black;
+  color: rgb(0, 0, 0);
   z-index: 1;
 }
 .landing main .intro-wrapper {
@@ -39,11 +39,8 @@
   padding: 1.5rem;
   border-radius: 1em;
 }
-.landing main .intro-wrapper.blurred {
-  background: rgba(255, 255, 255, 0.1);
-}
 .landing main .intro-wrapper .intro {
-  font-size: 3rem;
+  font-size: 3.5rem;
   line-height: 4rem;
   padding-bottom: 1rem;
   z-index: 2;
@@ -56,7 +53,6 @@
 }
 .landing main .intro-wrapper .intro .menu {
   /* offset-x | offset-y | blur-radius | color */
-  margin-right: 1rem;
   display: -ms-flexbox;
   display: flex;
   -ms-flex: 1 1;

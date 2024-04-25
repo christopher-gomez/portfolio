@@ -12,17 +12,17 @@ export default (props) => {
     renderChildren: true,
   });
 
-  function toggleTransitionState() {
-    let cur = "in";
-    if (state.curTransitionState === "in") {
-      cur = "out";
-    }
+  // function toggleTransitionState() {
+  //   let cur = "in";
+  //   if (state.curTransitionState === "in") {
+  //     cur = "out";
+  //   }
 
-    setState((state) => ({
-      ...state,
-      curTransitionState: cur,
-    }));
-  }
+  //   setState((state) => ({
+  //     ...state,
+  //     curTransitionState: cur,
+  //   }));
+  // }
 
   useEffect(() => {
     if (
@@ -72,7 +72,7 @@ export default (props) => {
       }}
       onAnimationEnd={() => {
         if (state.curTransitionState === "out") {
-          setState((state) => ({ ...state, renderChildren: false }));
+          setState((state) => ({ ...state, renderChildren: true }));
         }
       }}
     >

@@ -10,8 +10,8 @@
   justify-content: center;
   z-index: 1;
   scroll-margin: 3em;
-  padding: 0 3em;
   transition: all 0.25s ease-in-out;
+  width: 100%;
 }
 .portfolio > * {
   transition: all 0.25s ease-in-out;
@@ -29,15 +29,48 @@
   display: flex;
   width: 100%;
   flex-direction: column;
+  /* Hide scroll bars in Firefox */
 }
 .portfolio .content-grid .title {
   display: flex;
-  flex-direction: row;
-  flex: auto;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 3em;
+  width: auto;
+  margin-top: 5em;
 }
 .portfolio .content-grid .title > * {
-  margin: 0 0.25em;
+  margin-bottom: 1em;
+}
+.portfolio .content-grid .title > div {
+  padding: 0 1em;
+  border-radius: 0.5em;
+  backdrop-filter: blur(20px);
+}
+.portfolio .content-grid .title > button {
+  background-color: rgba(255, 255, 255, 0.35);
+  padding: 0.25em;
+  border-radius: 0.5em;
+  margin-left: 0.5em;
+  backdrop-filter: blur(20px);
+}
+.portfolio .content-grid *::-webkit-scrollbar {
+  display: none !important;
+}
+.portfolio .content-grid *::-webkit-scrollbar {
+  width: 0.5em;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+}
+.portfolio .content-grid *::-webkit-scrollbar-thumb {
+  background-color: #888;
+}
+.portfolio .content-grid * {
+  scrollbar-width: thin;
+  scrollbar-color: #888 transparent;
+}
+.portfolio .content-grid *::-webkit-scrollbar-track {
+  background: transparent;
 }
 .portfolio .portfolio-wrapper {
   display: -ms-flexbox;
@@ -47,15 +80,17 @@
   -ms-flex-pack: center;
   justify-content: center;
   z-index: 1;
+  flex: 1 1;
+  justify-items: center;
+  align-content: center;
 }
 
-@media (max-width: 425px) {
+@media (max-width: 426px) {
   .portfolio {
-    padding-top: 3rem;
+    padding: 0;
+    padding-top: 2rem;
   }
-}
-@media (max-width: 425px) {
-  .portfolio .portfolio-wrapper {
+  .portfolio-wrapper {
     -ms-flex-direction: column;
     flex-direction: column;
     -ms-flex-align: center;

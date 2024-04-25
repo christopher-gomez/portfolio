@@ -4,20 +4,24 @@ import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { toElement as scrollToElement } from "../../util/scroll";
 import "../../styles/CSS/ScrollArrow.css";
 
-export default ({ to, text, prev }) => {
-  const [opacity, setOpacity] = useState(0.5);
+export default ({ to, text, prev, shouldBounce = true }) => {
+  const [opacity, setOpacity] = useState(.5);
   const scrollToNext = () => {
     const element = document.querySelector(to);
     scrollToElement(element);
   };
   return (
     <div className="scroll">
-      <div className="arrow bounce">
+      <div
+        className={`arrow ${shouldBounce ? "bounce" : ""}`}
+        onAnimationStart={(e) => e.stopPropagation()}
+        onAnimationEnd={(e) => e.stopPropagation()}
+      >
         {text && <div className="scroll-text">{text}</div>}
 
         {prev ? (
           <FontAwesomeIcon
-            style={{ color: "var(--text-color)", opacity: opacity }}
+            style={{ color: "white", opacity: opacity }}
             icon={faChevronUp}
             size="2x"
             onClick={() => scrollToNext()}
@@ -30,7 +34,7 @@ export default ({ to, text, prev }) => {
           />
         ) : (
           <FontAwesomeIcon
-            style={{ color: "var(--text-color)", opacity: opacity }}
+            style={{ color: 'white', opacity: opacity }}
             icon={faChevronDown}
             size="2x"
             onClick={() => scrollToNext()}

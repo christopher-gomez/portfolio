@@ -109,10 +109,6 @@ h1 {
     width: calc(100% - 15rem);
   }
 }
-::-webkit-scrollbar {
-  display: none;
-}
-
 a {
   text-decoration: none;
 }
