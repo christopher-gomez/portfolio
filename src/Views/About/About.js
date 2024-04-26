@@ -5,6 +5,7 @@ import Link from "../../Components/Link";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { faArrowDown, faExpand } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ColorCharacters from "../../Components/GlowingText/ColorCharacters";
 
 export default () => {
   const [careerExpanded, setCareerExpanded] = useState(true);
@@ -12,24 +13,38 @@ export default () => {
 
   return (
     <div className="about">
-      <div style={{margin: '0 .5em'}}>
-        <h1>About</h1>
+      <div className="title">
+        <div className="blur-container no-border">
+          <ColorCharacters
+            style={{
+              fontSize: "3rem",
+            }}
+            string={"About"}
+          />
+        </div>
         <div className="contact">
-          <Link href="mailto:c.gomez3644@gmail.com">Contact 📥</Link>
-          <Link newTab style={{ marginLeft: ".5em" }} href={resume}>
-            Resume 📋
-          </Link>
+          <div className="blur-container no-border">
+            <Link href="mailto:c.gomez3644@gmail.com">Contact 📥</Link>
+            <Link newTab style={{ marginLeft: ".5em" }} href={resume}>
+              Resume 📋
+            </Link>
+          </div>
         </div>
       </div>
-      <hr style={{ margin: "5px 0" }} />
-      <div className="wrapper">
+      {/* <hr style={{ margin: "5px 0", color: 'transparent', background: 'transparent'}} /> */}
+      <div className="wrapper" style={{ margin: "5px 0" }}>
         <Accordion
           expanded={careerExpanded}
           onChange={(event, expanded) => setCareerExpanded(expanded)}
-          sx={{ border: "none", boxShadow: "none" }}
+          sx={{
+            border: "none",
+            boxShadow: "none",
+            backgroundColor: "rgba(44, 48, 59, 0.6862745098) !important",
+            backdropFilter: "blur(10px)",
+          }}
         >
           <AccordionSummary
-            expandIcon={<FontAwesomeIcon icon={faArrowDown} />}
+            expandIcon={<FontAwesomeIcon color="white" icon={faArrowDown} />}
             aria-controls="panel1a-content"
             id="panel1a-header"
           >
@@ -41,16 +56,27 @@ export default () => {
               className="content professional-content"
               style={{ marginRight: "10%", paddingLeft: ".5em" }}
             >
-              <p>
-                I'm an Emmy-award winning full-stack software engineer currently
-                working at the video game studio Wayforward, with expertise in
-                React, Node, .NET, and Unity. I also have proficiency in C++ and
-                Python, adding to my diverse skill set.
+              <p style={{ fontWeight: 500 }}>
+                <i>
+                  Hi, I'm Chris! Thanks for taking the time to visit and read through my
+                  site.
+                </i>
               </p>
               <p>
-                I enjoy building development tools, frameworks, reusable
-                components, as well as base classes and writing documentation to
-                improve productivity and development time.
+                I'm a software engineer and I implement full-stack stack
+                solutions and experiences in the video game and hospitality
+                industries. I work at Wayforward Technologies, a video game
+                studio based in Santa Clarita, CA. I've been primarily working
+                on the LBE (Location Based Entertainment) team for the past 2
+                years, but I've also contributed work to multiple games during
+                my tenure here.
+              </p>
+              <p>
+                My day to day tasks usually have me working in a video game
+                engine such as Unity or Unreal, but my skills and
+                responsibilities range from application design and development,
+                general research and development, and even some light devops
+                work.
               </p>
               <p>
                 My primary focus has been creating accessible and enjoyable user
@@ -80,6 +106,19 @@ export default () => {
                 others. I'm excited to continue creating and innovating in the
                 field of software engineering.
               </p>
+              <p>
+                I'm proficient with React, Node.js, C#/.NET Framework, and
+                Unity. I'm also adept in Python, and can hold my own in C++ and
+                Unreal. Languages and syntax are easy for me to pick up, but I
+                think the most important skill to have is the ability to learn
+                and adapt to new technologies and paradigms. I'm always looking
+                to learn new things and improve my skills.
+              </p>
+              {/* <p>
+                I have a passion for a wide range of technologies and am always
+                eager to learn new things. I enjoy making interactive
+                applications, games, and multimedia art.
+              </p> */}
             </div>
           </AccordionDetails>
         </Accordion>
@@ -120,15 +159,26 @@ export default () => {
           </div>
         </div>
       </div> */}
-      <hr style={{ margin: "5px 0" }} />
+      {/* <hr
+        style={{
+          margin: "5px 0",
+          color: "transparent",
+          background: "transparent",
+        }}
+      /> */}
       <div className="wrapper" style={{ textAlign: "right" }}>
         <Accordion
           expanded={personalExpanded}
           onChange={(event, expanded) => setPersonalExpanded(expanded)}
-          sx={{ border: "none", boxShadow: "none" }}
+          sx={{
+            border: "none",
+            boxShadow: "none",
+            backgroundColor: "rgba(44, 48, 59, 0.6862745098) !important",
+            backdropFilter: "blur(10px)",
+          }}
         >
           <AccordionSummary
-            expandIcon={<FontAwesomeIcon icon={faArrowDown} />}
+            expandIcon={<FontAwesomeIcon color="white" icon={faArrowDown} />}
             aria-controls="panel2a-content"
             id="panel2a-header"
             className="personal-accordion-summary"
@@ -151,20 +201,32 @@ export default () => {
                 mathematics.
               </p>
               <p>
-                Outside of work, I enjoy spending time with my two dogs, taking
-                long walks, running, golfing, hiking, traveling, playing video
-                games, collecting vinyl records, and attending music festivals.
-                I'm also an avid reader, history buff, and Game of Thrones
-                fanatic.
+                I started coding when I was about 16 years old, and couldn't
+                imagine doing anything else.
               </p>
               <p>
-                As a die-hard Laker and NBA fan, you can usually find me
-                cheering on my team or pouring through advanced analytics.
+                Outside of work, I enjoy spending time with my two dogs, going
+                to the gym, running, hiking, traveling, playing video games,
+                going to concerts, and eating! I'm a huge foodie and love trying
+                new foods and restaurants. I'm also an avid reader, history
+                buff, and lore (of any kind!) enthusiast.
+              </p>
+              <p>
+                Even though I live in the bay, I bleed purple and gold. I'm a
+                die hard Lakers fan, but I'll go to any NBA game I can, and will
+                usually watch any game on when I have the time. Some of my
+                earliest core memories include attending a game on Christmas during
+                the Kobe and Shaq era and cheering with my dad in
+                our living room on Sundays, when they still wore the Sunday
+                whites. And although I've gotten older, I find myself with
+                less time to invest into them, I'd really like to see them hang
+                banner #18 soon.
               </p>
               <p>
                 I'm happiest when I'm making and eating fresh homemade pasta
                 with a nice glass of red wine. My dream is to own a vineyard and
-                spend my days entertaining and eating. Che bello!
+                spend my days eating in the company of family and friends. Che
+                bello!
               </p>
               <p>Alla prossima!</p>
               <p>🍝🍇🍷 </p>

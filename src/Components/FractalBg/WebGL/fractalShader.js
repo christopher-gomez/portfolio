@@ -1,9 +1,10 @@
 // Vertex shader
 export const vertexShader = `
 varying vec3 vPosition;
-
+varying vec2 vUv;
 void main() {
     vPosition = position;
+    vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
@@ -20,6 +21,7 @@ uniform float uXDriftFactor;
 uniform float uYDriftFactor;
 uniform float uNoiseScale;
 uniform float uDistortion;
+varying vec2 vUv;
 
 out vec4 fragColor;
 
@@ -98,6 +100,9 @@ vec3 mod289(vec3 x) {
 
 void main() {
     vec2 st = gl_FragCoord.xy / uResolution.xy;
+    // st.x *= uResolution.x / uResolution.y;
+    st = clamp(st, 0.0, 1.0);
+
     // vec4 texColor = texture(uFractalTexture, st);
 
     float xDriftFactor = 0.01; // Adjust for stronger or subtler drift

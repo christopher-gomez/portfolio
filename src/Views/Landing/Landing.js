@@ -43,7 +43,7 @@ export default ({
   const displayScrollElement = (
     element,
     transitionAnim = "fade-in-bottom",
-    shouldLog = false
+    shouldLog = true
   ) => {
     if (!element) return;
 
@@ -83,8 +83,11 @@ export default ({
   useEffect(() => {
     let fadeInTimeout;
     const handleScrollAnimation = (e) => {
+      console.log('handle scroll animation');
       clearTimeout(fadeInTimeout);
-      const elInView = isElementInView(wrapperRef.current, 550);
+      const elInView = isElementInView(wrapperRef.current, 50);
+
+      console.log('el in view', elInView, elementsHiddenRef.current, hasShown.current)
 
       if (elementsHiddenRef.current) hasShown.current = true;
 
@@ -143,6 +146,7 @@ export default ({
     // window.addEventListener("resize", handleResize);
 
     fadeInTimeout = setTimeout(() => {
+      console.log('fade in timeout')
       handleScrollAnimation();
     }, 1000);
     // handleResize();

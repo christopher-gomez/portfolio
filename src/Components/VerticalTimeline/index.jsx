@@ -49,9 +49,8 @@ export default ({ items, onShowMore = () => {} }) => {
                   paddingLeft: index % 2 === 0 ? "2em" : "1em",
                 }}
               >
+                <pre style={{ margin: 0 }}>{item.type}</pre>
                 <pre style={{ margin: 0 }}>{item.time}</pre>
-                <pre style={{ margin: 0 }}>WayForward Technologies, Inc.</pre>
-                <pre style={{ margin: 0 }}>ok</pre>
               </div>
             </div>
             {viewType === "blurred" && (

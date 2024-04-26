@@ -7,11 +7,25 @@ import { hexToRgb } from "../../util/color";
 import ScrollButton from "../ScrollButton";
 import { isElementInView } from "../../util/misc";
 
-export default (props) => {
+export default ({ shouldHide }) => {
   const [state, setState] = useState({ isSticky: false });
   const nav = useRef();
 
   const stateRef = useRef(state);
+
+  useEffect(() => {
+    if (!nav.current) return;
+
+    if (shouldHide) {
+      nav.current.classList.remove("fade-in-top");
+      nav.current.classList.add("fade-out-top");
+    } else {
+      nav.current.classList.remove("fade-out-top");
+      nav.current.classList.add("scrolled");
+      nav.current.classList.add("sticky");
+      nav.current.classList.add("fade-in-top");
+    }
+  }, [shouldHide]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -20,7 +34,7 @@ export default (props) => {
   const handleScroll = () => {
     const elInView = isElementInView(
       document.querySelector(".intro-wrapper"),
-      550
+      50
     );
 
     if (!elInView && !stateRef.current.isSticky) {
@@ -46,7 +60,7 @@ export default (props) => {
 
   useEffect(() => {
     if (nav.current) {
-      if(state.isSticky) {
+      if (state.isSticky) {
         nav.current.classList.remove("fade-out-top");
         nav.current.classList.add("scrolled");
         nav.current.classList.add("sticky");

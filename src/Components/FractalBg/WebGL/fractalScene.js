@@ -68,6 +68,8 @@ export default class Scene {
 
     this.clock = new THREE.Clock();
     let texture = new THREE.CanvasTexture(canvas2D);
+    // texture.wrapS = THREE.RepeatWrapping;
+    // texture.wrapT = THREE.RepeatWrapping;
     this.fractalTexture = texture;
 
     let scene = new THREE.Scene();
@@ -85,7 +87,7 @@ export default class Scene {
       canvas: canvas3D,
       alpha: true,
       antialias: true,
-      powerPreference: "high-performance",
+      // powerPreference: "high-performance",
     });
     renderer.setClearColor(0x000000, 0); // Set clear color to black with full transparency
     renderer.getContext().enable(renderer.getContext().DEPTH_TEST);
@@ -273,6 +275,7 @@ export default class Scene {
       transparent: true,
       blending: THREE.NormalBlending,
     });
+
     this.fractalMaterial = material;
 
     let geometry = new THREE.PlaneGeometry(2, 2);
@@ -420,10 +423,7 @@ export default class Scene {
 
       if (this.fractalMaterial) {
         this.fractalMaterial.uniforms.uTime.value = time;
-        this.fractalMaterial.uniforms.uResolution.value.set(
-          window.innerWidth,
-          window.innerHeight
-        );
+        this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio)
         this.fractalMaterial.uniforms.uXDriftFactor.value = this.uXDriftFactor;
         this.fractalMaterial.uniforms.uYDriftFactor.value = this.uYDriftFactor;
         this.fractalMaterial.uniforms.uNoiseScale.value = this.uNoiseScale;

@@ -6,7 +6,18 @@
   scroll-margin: 3.25em;
   justify-content: center;
   z-index: 1;
+  padding-bottom: 2em;
   margin: 0 auto;
+}
+.about .title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: auto;
+  padding-top: 1em;
+}
+.about .title > * {
+  margin-bottom: 1em;
 }
 .about > * {
   z-index: 1;
@@ -14,9 +25,10 @@
 .about h1 {
   font-size: 3rem;
   font-weight: 100;
+  color: white !important;
 }
 .about a {
-  color: black;
+  color: white !important;
   font-weight: 300;
   margin-right: 1em;
 }
@@ -28,11 +40,11 @@
   font-size: 1.5rem;
   font-weight: 300;
   text-align: center;
-  color: black;
+  color: white !important;
   z-index: 1;
 }
 .about h1 {
-  color: black;
+  color: white !important;
 }
 .about .contact {
   margin: 0;
@@ -41,6 +53,7 @@
 .about .wrapper h2 {
   margin: 0;
   margin-bottom: 0.5rem;
+  color: white !important;
 }
 .about .wrapper .content {
   flex: auto;
@@ -48,14 +61,16 @@
   margin-right: 0;
   font-size: 1.2rem;
   line-height: 2rem;
-  color: black;
   margin-bottom: 1em;
-  color: rgb(11, 11, 11);
+  color: white !important;
   text-align: left;
+}
+.about .wrapper .content * {
+  font-style: italic;
 }
 .about .wrapper .content p {
   font-weight: 300;
-  color: rgb(11, 11, 11);
+  color: white !important;
   padding: 0.25rem 0;
 }
 .about .wrapper .resume {

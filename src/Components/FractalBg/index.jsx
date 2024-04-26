@@ -20,7 +20,7 @@ import {
 } from "../../util/color";
 import Backdrop from "../Backdrop";
 import Link from "../Link";
-import { isElementInView } from "../../util/misc";
+import { isElementInView, isMobileClient } from "../../util/misc";
 import {
   Button,
   Dialog,
@@ -42,6 +42,7 @@ import { createNoise3D } from "simplex-noise";
 import WebGL from "./WebGL";
 import SettingsMenu from "./SettingsMenu";
 import BrushIcon from "@mui/icons-material/Brush";
+import { isMobile } from "mobile-device-detect";
 
 const Noise = createNoise3D();
 
@@ -49,7 +50,7 @@ const originalFractalProperties = {
   /* In other experiments, you may wish to use more fractal curves ("paths")
   and allow the radius of them to vary. If so, modify the next three variables.
    */
-  numPaths: 4,
+  numPaths: 3,
   maxMaxRad: 260,
   minMaxRad: 200,
   colors: [
@@ -58,7 +59,7 @@ const originalFractalProperties = {
   ],
   /* We draw closed curves with varying radius. The factor below should be set between 0 and 1, representing the size of the smallest radius with respect to the largest possible.
    */
-  minRadFactor: 0.0005,
+  minRadFactor: 0.0001,
   /* The number of subdividing steps to take when creating a single fractal curve. 
    Can use more, but anything over 10 (thus 1024 points) is overkill for a moderately sized canvas.
    */
@@ -130,7 +131,7 @@ export default (props) => {
     eraseCompleted: false,
     shouldEraseOnRedraw: false,
     shouldAutoRedraw: false,
-    drawsPerFrame: 12,
+    drawsPerFrame: isMobile ? 6 : 12,
     fpsLimit: -1,
     autoRedrawOnResize: true,
     isPaused: false,
@@ -160,7 +161,7 @@ export default (props) => {
   });
 
   const animationRunning = useRef(false);
-  const drawCanvasElem = useRef();
+  // const drawCanvasElem = useRef();
   const canvasElemInitialPos = useRef();
   const canvasElemTotalOffset = useRef(0);
   const prevScroll = useRef(window.scrollY);
@@ -196,8 +197,31 @@ export default (props) => {
     cancelAnimation(fractalRef.current);
 
     if (drawCanvas.current) {
-      drawCanvasElem.current.height = window.innerHeight;
-      drawCanvasElem.current.width = window.innerWidth;
+      let ctxRef = drawCanvas.current.getContext("2d");
+
+      const dpr = window.devicePixelRatio || 1;
+      const bsr =
+        //@ts-ignore
+        ctxRef.webkitBackingStorePixelRatio ||
+        //@ts-ignore
+        ctxRef.mozBackingStorePixelRatio ||
+        //@ts-ignore
+        ctxRef.msBackingStorePixelRatio ||
+        //@ts-ignore
+        ctxRef.oBackingStorePixelRatio ||
+        //@ts-ignore
+        ctxRef.backingStorePixelRatio ||
+        1;
+
+      const ratio = dpr / bsr;
+
+      drawCanvas.current.width = window.innerWidth * ratio;
+      drawCanvas.current.height = window.innerHeight * ratio;
+      drawCanvas.current.style.width = `${window.innerWidth}px`;
+      drawCanvas.current.style.height = `${window.innerHeight}px`;
+
+      // drawCanvasElem.current.height = window.innerHeight;
+      // drawCanvasElem.current.width = window.innerWidth;
 
       if (!UIStateRef.current.active)
         resizeTimeoutRef.current = setTimeout(() => init(), 250);
@@ -239,8 +263,8 @@ export default (props) => {
   const scrollDirection = useRef(null);
 
   useEffect(() => {
-    if (drawCanvasElem.current) {
-      canvasElemInitialPos.current = drawCanvasElem.current.offsetTop;
+    if (drawCanvas.current) {
+      canvasElemInitialPos.current = drawCanvas.current.offsetTop;
     }
 
     window.removeEventListener("scroll", handleScrollY);
@@ -248,26 +272,30 @@ export default (props) => {
     window.removeEventListener("resize", handleResize);
     window.addEventListener("resize", handleResize);
 
+    handleResize();
+
     return () => {
       window.removeEventListener("scroll", handleScrollY);
       window.removeEventListener("resize", handleResize);
     };
-  }, [drawCanvasElem.current]);
+  }, [drawCanvas.current]);
 
   const handleScrollY = () => {
     if (UIStateRef.current.active) return;
-    if (isElementInView(document.querySelector(".portfolio"), 0)) {
+    if (isElementInView(document.querySelector(".portfolio"), 0) || isElementInView(document.querySelector(".about"), 0)) {
       document.querySelector("#zen-viewer").style.display = "none";
     } else {
       document.querySelector("#zen-viewer").style.display = "block";
     }
 
+    return;
+
     if (animationStateRef.current.useWebGL) return;
 
-    if (!drawCanvasElem.current) return;
+    if (!drawCanvas.current) return;
 
     if (!canvasElemInitialPos.current) {
-      canvasElemInitialPos.current = drawCanvasElem.current.offsetTop;
+      canvasElemInitialPos.current = drawCanvas.current.offsetTop;
     }
 
     const ease = 0.01;
@@ -332,7 +360,7 @@ export default (props) => {
       const newTop = -canvasElemTotalOffset.current * 0.15;
 
       // if (newTop >= -300)
-      drawCanvasElem.current.style.top = `${newTop}px`;
+      drawCanvas.current.style.top = `${newTop}px`;
 
       if (!shouldStop)
         canvasScrollAnimFrame.current = requestAnimationFrame(animation_loop);
@@ -349,6 +377,8 @@ export default (props) => {
     const handleMouseMove = () => {
       processUIState();
     };
+
+    if(isMobile || isMobileClient()) setWebGLAvailable(false);
 
     window.addEventListener("pointermove", handleMouseMove);
 
@@ -401,22 +431,22 @@ export default (props) => {
 
   useEffect(() => {
     if (drawCanvas.current) {
-      drawCanvas.current.height = window.innerHeight;
-      drawCanvas.current.width = window.innerWidth;
+      handleResize();
+
       fractalRef.current.ctx = drawCanvas.current.getContext("2d", {
         willReadFrequently: true,
-        imageSmoothingEnabled: false,
+        imageSmoothingEnabled: true,
       });
 
       textureRef.current = drawCanvas.current;
     }
   }, [drawCanvas.current]);
 
-  useEffect(() => {
-    if (!animationState.useWebGL || !webGLAvailable) {
-      if (drawCanvas.current) drawCanvasElem.current = drawCanvas.current;
-    }
-  }, [animationState.useWebGL, webGLAvailable, drawCanvas.current]);
+  // useEffect(() => {
+  //   if (!animationState.useWebGL || !webGLAvailable) {
+  //     if (drawCanvas.current) drawCanvas.current = drawCanvas.current;
+  //   }
+  // }, [animationState.useWebGL, webGLAvailable, drawCanvas.current]);
 
   useEffect(() => {
     // console.log("isDrawing changed to ", animationState.isDrawing);
@@ -1500,17 +1530,17 @@ export default (props) => {
           canvas2D={textureRef.current}
           shouldRender={animationState.useWebGL}
           onSceneCreated={(canvas) => {
-            drawCanvasElem.current = canvas;
+            // drawCanvasElem.current = canvas;
             console.log("WebGL Scene Created");
           }}
           onWebGLUnavailable={() => {
-            originalFractalProperties.colors = [
-              "rgba(255,255,255,.3)",
-              "rgba(255,255,255,.6)",
-            ];
+            // originalFractalProperties.colors = [
+            //   "rgba(255,255,255,.3)",
+            //   "rgba(255,255,255,.6)",
+            // ];
             setAnimationState((s) => ({ ...s, useWebGL: false }));
             setWebGLAvailable(false);
-            drawCanvasElem.current = drawCanvas.current;
+            // drawCanvasElem.current = drawCanvas.current;
           }}
           xDriftFactor={fractalPropertiesState.webGL.xDriftFactor}
           yDriftFactor={fractalPropertiesState.webGL.yDriftFactor}

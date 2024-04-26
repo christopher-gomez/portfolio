@@ -23,8 +23,17 @@ import HorizontalTimeline from "../../Components/HorizontalTimeline/index.jsx";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import { IconButton, Tooltip, Button, Typography } from "@mui/material";
 import VerticalTimeline from "../../Components/VerticalTimeline/index.jsx";
+import { isMobile } from "mobile-device-detect";
+import { isMobileClient } from "../../util/misc.js";
 
-export default ({ color, onCardHover, isDrawing, drawX, hack }) => {
+export default ({
+  color,
+  onCardHover,
+  isDrawing,
+  drawX,
+  hack,
+  setShouldHideNav,
+}) => {
   const [state, setState] = useState({
     showingModal: false,
     modalItem: null,
@@ -39,6 +48,14 @@ export default ({ color, onCardHover, isDrawing, drawX, hack }) => {
   const scrollingToward = useRef(true);
   const prevTop = useRef(0);
   const delayTimer = useRef();
+
+  useEffect(() => {
+    if (state.showingModal) {
+      setShouldHideNav(true);
+    } else {
+      setShouldHideNav(false);
+    }
+  }, [state.showingModal]);
 
   useEffect(() => {
     // const handleScroll = (e) => {
@@ -190,6 +207,12 @@ export default ({ color, onCardHover, isDrawing, drawX, hack }) => {
     setItems(PortfolioItems);
   }, [view, state.isCondensed]);
 
+  useEffect(() => {
+    if (isMobile || isMobileClient()) {
+      setView("cards");
+    }
+  }, []);
+
   return (
     <>
       {/* <PortfolioProvider> */}
@@ -249,7 +272,7 @@ export default ({ color, onCardHover, isDrawing, drawX, hack }) => {
               )}
               {view === "timeline" && (
                 <>
-                  <IconButton>
+                  {/* <IconButton>
                     <FontAwesomeTextIcon
                       icon={
                         timelineSubView === "horizontal"
@@ -262,7 +285,7 @@ export default ({ color, onCardHover, isDrawing, drawX, hack }) => {
                           : "Horizontal"
                       }
                     />
-                  </IconButton>
+                  </IconButton> */}
                   {/* <IconButton
                     sx={{ p: 0, m: 1 }}
                     onClick={() => {
@@ -277,20 +300,22 @@ export default ({ color, onCardHover, isDrawing, drawX, hack }) => {
                   </IconButton> */}
                 </>
               )}
-              <IconButton
-                sx={{ p: 0, m: 1 }}
-                onClick={() => {
-                  setView(view === "timeline" ? "cards" : "timeline");
-                }}
-              >
-                {view === "timeline" ? (
-                  <Tooltip title="Cards" placement="bottom">
-                    <DashboardIcon />
-                  </Tooltip>
-                ) : (
-                  <FontAwesomeTextIcon icon={faTimeline} text={"Timeline"} />
-                )}
-              </IconButton>
+              {!isMobile && !isMobileClient() && (
+                <IconButton
+                  sx={{ p: 0, m: 1 }}
+                  onClick={() => {
+                    setView(view === "timeline" ? "cards" : "timeline");
+                  }}
+                >
+                  {view === "timeline" ? (
+                    <Tooltip title="Cards" placement="bottom">
+                      <DashboardIcon />
+                    </Tooltip>
+                  ) : (
+                    <FontAwesomeTextIcon icon={faTimeline} text={"Timeline"} />
+                  )}
+                </IconButton>
+              )}
             </div>
           </div>
 

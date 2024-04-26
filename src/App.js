@@ -29,7 +29,6 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FB_MEASUREMENT_ID,
 };
 
-
 // Initialize Firebase
 const fb = initializeApp(firebaseConfig);
 const analytics = getAnalytics(fb);
@@ -49,6 +48,8 @@ const App = () => {
     curView: 0,
     hack: false,
   });
+
+  const [shouldHideNav, setShouldHideNav] = useState(false);
 
   // const isScrolling = useRef(false);
 
@@ -174,9 +175,9 @@ const App = () => {
           }));
         }}
       />
-      <Nav forceSticky={state.forceStickyNav} />
+      <Nav forceSticky={state.forceStickyNav} shouldHide={shouldHideNav} />
       <Transition visible={state.contentShowing}>
-        <Landing {...state} isZenMode={!state.contentShowing}/>
+        <Landing {...state} isZenMode={!state.contentShowing} />
         <Portfolio
           onCardHover={(hovered) => {
             if (hovered) {
@@ -185,6 +186,7 @@ const App = () => {
               document.querySelector(".App").classList.remove("hovered");
             }
           }}
+          setShouldHideNav={setShouldHideNav}
         />
         <About />
         <ScrollTop />

@@ -11,6 +11,7 @@ import {
   faJsSquare,
   faUnity,
   faDocker,
+  faGoogle,
 } from "@fortawesome/free-brands-svg-icons";
 import { faGamepad, faMobile } from "@fortawesome/free-solid-svg-icons";
 import syn from "../../Assets/images/syn_orange.png";
@@ -38,29 +39,10 @@ import RCG from "../../Assets/images/RCG.jpg";
 import TravelMapMain from "../../Assets/images/travel_map.png";
 import TravelMap2 from "../../Assets/images/travel_map2.png";
 import TravelMap3 from "../../Assets/images/travel_map_mobile.png";
+import spotilizeLightMode from "../../Assets/images/spotilize.png";
+import spotilizeJamesBrown from "../../Assets/images/spotilize_v2_jamesbrown.png";
 
 const items = [
-  {
-    img: {
-      cols: 12,
-      rowHeight: 32,
-      gap: 0,
-      data: [
-        { url: TravelMap2, cols: 12, rows: 4 },
-        { url: TravelMapMain, cols: 6, rows: 4 },
-        { url: TravelMap3, cols: 6, rows: 4 },
-      ],
-    },
-    title: "Travel App",
-    description:
-      "A small utility web app I made for my upcoming trip to Japan, utlizing the Google Maps API and Notion API to display a map of my trip and a list of places I want to visit. The app is built with React and Node, and is deployed on Google Cloud. Notion is used extensively for the backend data storage and management, as well as a collaborative document for tip planning between my family and I.",
-    icons: [
-      { type: "font-awesome", icon: faNode },
-      { type: "font-awesome", icon: faReact },
-    ],
-    links: [],
-    time: "2024",
-  },
   {
     img: { data: [{ url: RCG }] },
     title: "River City Girls Mobile",
@@ -81,6 +63,84 @@ const items = [
       },
     ],
     time: "2024",
+    type: "WayForward Technologies, Inc.",
+  },
+  {
+    img: {
+      cols: 12,
+      rowHeight: 32,
+      gap: 0,
+      data: [
+        { url: TravelMap2, cols: 12, rows: 4 },
+        { url: TravelMapMain, cols: 6, rows: 4 },
+        { url: TravelMap3, cols: 6, rows: 4 },
+      ],
+    },
+    title: "Travel App",
+    description:
+      "A small utility web app I made for my upcoming trip to Japan, utlizing the Google Maps API and Notion API to display a map of my trip and a list of places I want to visit. The app is built with React and Node, and is deployed on Google Cloud. Notion is used extensively for the backend data storage and management, as well as a collaborative document for tip planning between my family and I.",
+    icons: [
+      { type: "font-awesome", icon: faNode },
+      { type: "font-awesome", icon: faReact },
+      { type: "font-awesome", icon: faGoogle },
+    ],
+    links: [
+      {
+        title: "Website",
+        href: "https://travelmap2-414205.wl.r.appspot.com/",
+      },
+      {
+        title: "Github",
+        href: "https://github.com/christopher-gomez/TravelMap",
+      },
+    ],
+    time: "2024",
+    type: "Personal Project",
+  },
+  {
+    img: {
+      cols: 12,
+      rowHeight: 48,
+      gap: 0,
+      data: [
+        { url: portal, cols: 12, rows: 3 },
+        { url: journeyViewLandscape, cols: 6, rows: 3 },
+        { url: journeyViewSea, preview: false },
+        { url: oceanCompass, preview: false },
+        { url: oceanCompassJapanese, cols: 3, rows: 3 },
+        { url: bingo, cols: 3, rows: 3 },
+      ],
+    },
+    // title: "Princess Cruises MedallionClass®",
+    title: "Princess Cruises Interactive Surfaces",
+    description:
+      "Interactive software for Princess Cruises ship guests. I actively develop and maintain many parts of this network of systems. " +
+      'This family of applications are deployed to touch screen "Portals" throughout the ship, for guests to ' +
+      "around. I'm responsible for various functionalities and features such as OceanCompass (ship map and GPS routing services), OceanFun (cruise itinerary and event scheduling), and OceanCasino. I work in both the front and the back ends, and work closely with the product manager, directors, and designers to ensure network data requests are " +
+      "optimal when at sea.",
+    icons: [
+      {
+        type: "font-awesome",
+        icon: faMobile,
+      },
+      { type: "font-awesome", icon: faDocker },
+      {
+        type: "fizz",
+        icon: "icon-csharp",
+      },
+      {
+        type: "font-awesome",
+        icon: faUnity,
+      },
+    ],
+    links: [
+      {
+        title: "Website",
+        href: "https://www.princess.com/cruise-tips-vacation-ideas/cruise-destinations/cruise-tips-advice-and-information/what-is-medallion-class.html",
+      },
+    ],
+    time: "2022-2024",
+    type: "WayForward Technologies, Inc.",
   },
   {
     img: { data: [{ url: aw }] },
@@ -119,51 +179,7 @@ const items = [
       },
     ],
     time: "2021-2022",
-  },
-  {
-    img: {
-      cols: 12,
-      rowHeight: 48,
-      gap: 0,
-      data: [
-        { url: portal, cols: 12, rows: 3 },
-        { url: journeyViewLandscape, cols: 6, rows: 3 },
-        { url: journeyViewSea, preview: false },
-        { url: oceanCompass, preview: false },
-        { url: oceanCompassJapanese, cols: 3, rows: 3 },
-        { url: bingo, cols: 3, rows: 3 },
-      ],
-    },
-    title: "Princess Cruises MedallionClass®",
-    description:
-      "Interactive software for Princess Cruises ship guests. I actively develop and maintain many parts of this network of systems. " +
-      "This product includes both a phone app and software that gets deployed to large touch screen devices on-ship that guests can interact with while walking " +
-      "around. I'm responsible for various products under the MedallionClass umbrella such as Wayfinding (ship map and GPS routing services), Shipmates Chat, Casino and " +
-      "localization. I work in both the front and the back ends, and work closely with the product manager, directors, and designers to ensure network data requests are " +
-      "optimal when at sea.",
-    icons: [
-      {
-        type: "font-awesome",
-        icon: faMobile,
-      },
-      { type: "font-awesome", icon: faNode },
-      { type: "font-awesome", icon: faDocker },
-      {
-        type: "fizz",
-        icon: "icon-csharp",
-      },
-      {
-        type: "font-awesome",
-        icon: faUnity,
-      },
-    ],
-    links: [
-      {
-        title: "Website",
-        href: "https://www.princess.com/cruise-tips-vacation-ideas/cruise-destinations/cruise-tips-advice-and-information/what-is-medallion-class.html",
-      },
-    ],
-    time: "2022-2023",
+    type: "WayForward Technologies, Inc.",
   },
   {
     img: { data: [{ url: playshow }] },
@@ -204,6 +220,45 @@ const items = [
       { title: "Companion App", href: "https://www.playshow.games" },
     ],
     time: "2019-2020",
+    type: "WayForward Technologies, Inc.",
+  },
+  {
+    img: {
+      cols: 12,
+      rowHeight: 24,
+      gap: 0,
+      data: [
+        { url: spotilize, cols: 12, rows: 12},
+        { url: spotilizeJamesBrown, preview: false },
+        { url: spotilizeLightMode, preview: false },
+      ],
+    },
+    title: "Spotilize",
+    description:
+      "Originally a Node, Express, Vue web app that utilizes a Chrome extension to analyze and visualize Spotify audio frequency waves I made in 2019, I've since updated it to use React and the Spotify analysis API to visualize without the need for a browser extension. Because of the data returned by the API, the visualization is not as detailed as the original, but the ease of use and accessibility is much improved.",
+    icons: [
+      { type: "font-awesome", icon: faNode },
+      { type: "font-awesome", icon: faReact },
+      { type: "font-awesome", icon: faVuejs },
+      { type: "font-awesome", icon: faSpotify },
+      { type: "font-awesome", icon: faChrome },
+    ],
+    links: [
+      {
+        title: "V2",
+        href: "https://spotilizev2.web.app/",
+      },
+      {
+        title: "V1",
+        href: "https://spotilize.uc.r.appspot.com/",
+      },
+      {
+        title: "Github",
+        href: "https://github.com/christopher-gomez/Spotify-VIsualizer",
+      },
+    ],
+    type: "Personal Project",
+    time: "2019-2024",
   },
   {
     img: catan,
@@ -225,6 +280,7 @@ const items = [
       },
     ],
     time: "2020-2023",
+    type: "Personal Project",
   },
   {
     img: engine,
@@ -250,6 +306,7 @@ const items = [
       },
     ],
     time: "2020-2023",
+    type: "Personal Project",
   },
   {
     img: twit,
@@ -274,6 +331,30 @@ const items = [
       },
     ],
     time: "2020-2021",
+    type: "Personal Project",
+  },
+  {
+    img: nba,
+    title: "NBA Rosters",
+    description:
+      "A Node, Express, Vue, MongoDB web app that utilizes a RESTful API for CRUDL operations on NBA team rosters.",
+    icons: [
+      { type: "font-awesome", icon: faNode },
+      { type: "font-awesome", icon: faVuejs },
+      { type: "mfizz", icon: "icon-mongodb" },
+    ],
+    links: [
+      {
+        title: "Website",
+        href: "https://aerobic-ward-301402.wl.r.appspot.com/",
+      },
+      {
+        title: "Github",
+        href: "https://github.com/christopher-gomez/NBARosters",
+      },
+    ],
+    time: "2019",
+    type: "Personal Project",
   },
   {
     img: jupyter,
@@ -297,51 +378,30 @@ const items = [
       },
     ],
     time: "2018",
+    type: "School Project",
   },
   {
-    img: spotilize,
-    title: "Spotilize",
+    img: smart,
+    title: "SmartDJ",
     description:
-      "A Node, Express, Vue web app that utilizes a Chrome extension to analyze and visualize Spotify audio frequency waves.",
+      "An alternative to voice-based AI assistants, this software controls Spotify with nothing but your hand movements. (OpenCV, Python, Microsoft Kinect)",
     icons: [
-      { type: "font-awesome", icon: faNode },
+      { type: "font-awesome", icon: faPython },
+      { type: "fizz", icon: "icon-csharp" },
       { type: "font-awesome", icon: faVuejs },
+      { type: "font-awesome", icon: faNode },
+      { type: "mfizz", icon: "icon-shell" },
       { type: "font-awesome", icon: faSpotify },
-      { type: "font-awesome", icon: faChrome },
-    ],
-    links: [
-      {
-        title: "Website",
-        href: "https://spotilize.uc.r.appspot.com/",
-      },
-      {
-        title: "Github",
-        href: "https://github.com/christopher-gomez/Spotify-VIsualizer",
-      },
-    ],
-  },
-
-  {
-    img: nba,
-    title: "NBA Rosters",
-    description:
-      "A Node, Express, Vue, MongoDB web app that utilizes a RESTful API for CRUDL operations on NBA team rosters.",
-    icons: [
-      { type: "font-awesome", icon: faNode },
-      { type: "font-awesome", icon: faVuejs },
       { type: "mfizz", icon: "icon-mongodb" },
     ],
     links: [
       {
-        title: "Website",
-        href: "https://aerobic-ward-301402.wl.r.appspot.com/",
-      },
-      {
         title: "Github",
-        href: "https://github.com/christopher-gomez/NBARosters",
+        href: "https://github.com/christopher-gomez/SmartDJ",
       },
     ],
-    time: "2019",
+    time: "2018-2019",
+    type: "School Project",
   },
   {
     img: smooth,
@@ -368,28 +428,8 @@ const items = [
         href: "https://github.com/christopher-gomez/smooth-load",
       },
     ],
-  },
-  {
-    img: smart,
-    title: "SmartDJ",
-    description:
-      "An alternative to voice-based AI assistants, this software controls Spotify with nothing but your hand movements. (OpenCV, Python, Microsoft Kinect)",
-    icons: [
-      { type: "font-awesome", icon: faPython },
-      { type: "fizz", icon: "icon-csharp" },
-      { type: "font-awesome", icon: faVuejs },
-      { type: "font-awesome", icon: faNode },
-      { type: "mfizz", icon: "icon-shell" },
-      { type: "font-awesome", icon: faSpotify },
-      { type: "mfizz", icon: "icon-mongodb" },
-    ],
-    links: [
-      {
-        title: "Github",
-        href: "https://github.com/christopher-gomez/SmartDJ",
-      },
-    ],
-    time: "2018-2019",
+    type: "Personal Project",
+    date: "2018"
   },
   {
     img: syn,
@@ -414,8 +454,8 @@ const items = [
       },
     ],
     time: "2018",
+    type: "Personal Project",
   },
-
   {
     img: city,
     title: "Tower Defense Builder",
@@ -432,8 +472,8 @@ const items = [
       },
     ],
     time: "2018",
+    type: "School Project",
   },
-
   {
     img: tree,
     title: "Generative Art",
@@ -449,7 +489,8 @@ const items = [
         href: "https://codepen.io/christophergomez",
       },
     ],
-    time: "2017-2020",
+    time: "2017",
+    type: "Personal Project",
   },
 ];
 
