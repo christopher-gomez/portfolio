@@ -131,3 +131,16 @@
     opacity: 0;
   }
 }
+
+.brush-icon {
+  opacity: 0.5;
+  transition: all 0.25s linear !important;
+}
+.brush-icon > * {
+  font-size: 1.5em !important;
+}
+
+.brush-icon:hover {
+  opacity: 1;
+  transition: all 0s linear !important;
+}

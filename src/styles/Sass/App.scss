@@ -49,9 +49,13 @@ body::-webkit-scrollbar {
   width: fit-content !important;
   border: 3px solid rgba(255, 255, 255, 0.85);
   opacity: 1;
-  transition: background 1.5s ease-out, opacity .5s ease-out, border .5s ease-out, color 1.75s ease-out;
-  animation: blur-in 3s 1s ease-out forwards;
+  transition: background 1.5s .5s ease-out, opacity .5s 1s ease-out, border .5s ease-out, color 1.75s ease-out;
+  animation: blur-in 3s 1.5s ease-out both;
   color: rgb(255, 255, 255, 1.0) !important;
+
+  &.no-blur {
+    animation: none;
+  }
 
   * {
     color: white !important;
@@ -107,11 +111,12 @@ body::-webkit-scrollbar {
   }
 
   &.hidden-bg {
-    background: rgba(175, 194, 213, 0.25);
+    background: rgba(175, 194, 213, 0);
     color: rgba(255, 255, 255, 0.094);
     border: none;
-    transition: background .5s ease-in, border .5s ease-in, color .5s ease-in;
-    animation: blur-out .2s .5s ease-in forwards;
+    box-shadow: none;
+    transition: background .5s .5s ease-in, border .5s ease-in, color .5s ease-in;
+    animation: blur-out .2s .15s ease-in both;
     /* Important */
   }
 
@@ -145,7 +150,7 @@ body::-webkit-scrollbar {
       transform: translateX(-100vw);
       backdrop-filter: blur(0px);
     }
-    
+
   }
 
   @keyframes slide-in-right-then-blur {
@@ -219,7 +224,8 @@ body::-webkit-scrollbar {
 }
 
 .fade-out-top {
-  animation: fade-out-top .5s ease-out forwards;
+  animation: fade-out-top 1s linear;
+  animation-fill-mode:both;
 }
 
 .fade-in {
@@ -231,7 +237,8 @@ body::-webkit-scrollbar {
 }
 
 .fade-in-bottom {
-  animation: fade-in-bottom 1.5s ease-out forwards;
+  animation: fade-in-bottom 1.25s linear;
+  animation-fill-mode: both;
 }
 
 .fade-in-top {
@@ -317,7 +324,7 @@ body::-webkit-scrollbar {
     opacity: 1;
     pointer-events: unset;
   }
-  
+
   100% {
     transform: translateX(100vw);
     opacity: 0;
@@ -328,7 +335,7 @@ body::-webkit-scrollbar {
 @keyframes fade-in-bottom {
   0% {
     transform: translateY(-50px);
-    opacity: .7;
+    opacity: 0;
     pointer-events: none;
   }
 
@@ -338,6 +345,7 @@ body::-webkit-scrollbar {
 
   100% {
     opacity: 1;
+    transform: translateY(0);
     pointer-events: unset;
   }
 }
@@ -349,12 +357,12 @@ body::-webkit-scrollbar {
     pointer-events: none;
   }
 
-  50% {
-    transform: translateY(0);
-  }
+  // 50% {
+  //   transform: translateY(0);
+  // }
 
   100% {
-
+    transform: translateY(0);
     opacity: 1;
     pointer-events: unset;
   }
@@ -363,18 +371,17 @@ body::-webkit-scrollbar {
 @keyframes fade-out-top {
   0% {
     transform: translateY(0);
-    opacity: 1;
+    // opacity: 1;
     pointer-events: none;
   }
 
-  99% {
-    // transform: translateY(-200px);
-    opacity: 0;
+  50% {
+    opacity: .3;
   }
 
   100% {
-    transform: translateY(0);
     opacity: 0;
+    transform: translateY(-50px);
     pointer-events: none;
   }
 }

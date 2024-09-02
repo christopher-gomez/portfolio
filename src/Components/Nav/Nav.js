@@ -1,105 +1,52 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import "../../styles/CSS/Nav.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPaintBrush } from "@fortawesome/free-solid-svg-icons";
 import { toElement as scrollToElement } from "../../util/scroll";
-import { hexToRgb } from "../../util/color";
 import ScrollButton from "../ScrollButton";
-import { isElementInView } from "../../util/misc";
+import { useIntersectionObserver } from "../../util/IntersectionObserver";
 
-export default ({ shouldHide }) => {
-  const [state, setState] = useState({ isSticky: false });
+export default ({}) => {
   const nav = useRef();
 
-  const stateRef = useRef(state);
+  const introRef = useRef();
+  const introContainerRef = useRef();
 
-  useEffect(() => {
+  const handleVisible = () => {
     if (!nav.current) return;
 
-    if (shouldHide) {
-      nav.current.classList.remove("fade-in-top");
-      nav.current.classList.add("fade-out-top");
-    } else {
-      nav.current.classList.remove("fade-out-top");
-      nav.current.classList.add("scrolled");
-      nav.current.classList.add("sticky");
-      nav.current.classList.add("fade-in-top");
-    }
-  }, [shouldHide]);
-
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
-
-  const handleScroll = () => {
-    const elInView = isElementInView(
-      document.querySelector(".intro-wrapper"),
-      50
-    );
-
-    if (!elInView && !stateRef.current.isSticky) {
-      setState((state) => ({
-        ...state,
-        isSticky: true,
-      }));
-    } else if (elInView && stateRef.current.isSticky) {
-      setState((state) => ({
-        ...state,
-        isSticky: false,
-      }));
-    }
+    nav.current.classList.remove("fade-in-top");
+    nav.current.classList.add("fade-out-top");
   };
 
+  const handleHidden = () => {
+    if (!nav.current) return;
+
+    nav.current.classList.remove("fade-out-top");
+    nav.current.classList.add("scrolled");
+    nav.current.classList.add("sticky");
+    nav.current.classList.add("fade-in-top");
+  };
+
+  useIntersectionObserver(introRef, handleVisible, handleHidden, 0.99, null, -120);
+
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
+    // window.addEventListener("scroll", handleScroll);
+
+    introRef.current = document.querySelector(".intro-wrapper");
+    introContainerRef.current = document.querySelector("intro-wrapper-container");
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      // window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
-  useEffect(() => {
-    if (nav.current) {
-      if (state.isSticky) {
-        nav.current.classList.remove("fade-out-top");
-        nav.current.classList.add("scrolled");
-        nav.current.classList.add("sticky");
-        nav.current.classList.add("fade-in-top");
-      } else {
-        nav.current.classList.remove("fade-in-top");
-        nav.current.classList.add("fade-out-top");
-      }
-    }
-  }, [state.isSticky]);
 
   const scrollToPage = (pageSelector) => {
     const nextPage = document.querySelector(pageSelector);
     scrollToElement(nextPage);
   };
 
-  // const rgb = hexToRgb(props.color.bgColor);
-  // const stickyStyles =
-  //   state.isSticky || props.forceSticky
-  //     ? {
-  //         backgroundColor: rgb
-  //           ? `rgba(${rgb.r},${rgb.g},${rgb.b},1)`
-  //           : `var(--bg-color)`,
-  //         color: "black",
-  //       }
-  //     : {
-  //         backgroundColor: rgb
-  //           ? `rgba(${rgb.r},${rgb.g},${rgb.b},.1)`
-  //           : `var(--bg-color)`,
-  //         color: "black",
-  //       };
   return (
     <header>
-      <nav
-        role="navigation"
-        className={`nav js-scroll fade-out-top`}
-        ref={nav}
-        // style={stickyStyles}
-      >
+      <nav role="navigation" className={`nav js-scroll`} ref={nav}>
         <div
           className="left-container"
           onClick={(e) => scrollToPage(".landing")}

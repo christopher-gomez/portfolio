@@ -125,7 +125,7 @@ void main() {
     
     // Fetch the color from the offset coordinates
     vec4 color = texture(uFractalTexture, st + flow);
-    float originalAlpha = color.a * (1.0 - length(gl_PointCoord - vec2(0.5, 0.5)) * 100.0);
+    float originalAlpha = color.a * (1.0 - length(gl_PointCoord - vec2(0.5, 0.5)));
     fragColor = color; // Apply the fade to the color's alpha
 }
 `;

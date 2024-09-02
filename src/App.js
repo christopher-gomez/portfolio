@@ -18,6 +18,7 @@ import Transition from "./Components/Transition";
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FB_API_KEY,
@@ -49,7 +50,7 @@ const App = () => {
     hack: false,
   });
 
-  const [shouldHideNav, setShouldHideNav] = useState(false);
+  const [shouldHideNav, setShouldHideNav] = useState(true);
 
   // const isScrolling = useRef(false);
 
@@ -97,6 +98,10 @@ const App = () => {
     }));
   };
 
+  const [loaded, setLoaded] = useState(false);
+  const [initted, setInitted] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
+
   useEffect(() => {
     // window.addEventListener("scroll", handleScrollY);
     window.addEventListener("resize", handleResize);
@@ -120,7 +125,13 @@ const App = () => {
     // handleScrollY();
     handleResize();
 
+    let timeout;
+    timeout = setTimeout(() => {
+      setLoaded(true);
+    }, 3000);
+
     return () => {
+      clearTimeout(timeout);
       // window.removeEventListener("scroll", handleScrollY);
       window.removeEventListener("resize", handleResize);
 
@@ -136,48 +147,63 @@ const App = () => {
     }
   }, [state.contentShowing]);
 
+  const [canDisplayFractal, setCanDisplayFractal] = useState(false);
+
   return (
     <ThemeManager>
-      <FractalBg
-        allowZenMode={true}
-        // bgOpacity={state.bgOpacity}
-        // bgBlur={state.bgBlur}
-        // onFractalPosition={({
-        //   drawX,
-        //   drawY,
-        //   eraseX,
-        //   eraseY,
-        //   isDrawing,
-        //   isErasing,
-        // }) => {
-        //   if (state.hack || !isDrawing) return;
-
-        //   // setState((state) => ({
-        //   //   ...state,
-        //   //   drawX: drawX,
-        //   //   eraseX: eraseX,
-        //   //   isErasing,
-        //   //   isDrawing,
-        //   // }));
-        // }}
-        // onFadeOutBegin={() => {
-        //   setState((s) => ({ ...s, hack: true }));
-        // }}
-        // onFadeOutEnd={() => {
-        //   setState((s) => ({ ...s, hack: false }));
-        // }}
-        onToggleUI={(showing) => {
-          setState((state) => ({
-            ...state,
-            contentShowing: !showing,
-            bgOpacity: /*!showing ? 1 : state.bgOpacity*/ 1,
-            forceStickyNav: showing,
-          }));
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          justifyItems: "center",
+          alignItems: "center",
+          alignContent: "center",
+          justifyContent: "center",
+          background: "black",
+          zIndex: 2000,
+          display: initted ? "none" : "flex",
+          opacity: loaded ? 0 : 1,
+          transition: "opacity 1s",
         }}
-      />
+        onTransitionEnd={() => {
+          setInitted(true);
+        }}
+      >
+        <CircularProgress />
+      </Box>
+      <Box
+        sx={{ opacity: canDisplayFractal ? 1 : 0, transition: "opacity 2s" }}
+      >
+        <FractalBg
+          loaded={introComplete}
+          allowZenMode={true}
+          onToggleUI={(showing) => {
+            setState((state) => ({
+              ...state,
+              contentShowing: !showing,
+              bgOpacity: 1,
+              forceStickyNav: showing,
+            }));
+          }}
+        />
+      </Box>
       <Nav forceSticky={state.forceStickyNav} shouldHide={shouldHideNav} />
       <Transition visible={state.contentShowing}>
-        <Landing {...state} isZenMode={!state.contentShowing} />
+        <Landing
+          {...state}
+          isZenMode={!state.contentShowing}
+          loaded={initted}
+          onIntroComplete={() => {
+            setIntroComplete(true);
+
+            setTimeout(() => {
+              setCanDisplayFractal(true);
+            }, 0);
+          }}
+        />
         <Portfolio
           onCardHover={(hovered) => {
             if (hovered) {

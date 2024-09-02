@@ -13,6 +13,7 @@ export default ({
   yDriftFactor,
   noiseScale,
   distortion,
+  loaded,
 }) => {
   const canvas3DRef = React.useRef(null);
   const scene = useRef(new Scene());
@@ -36,6 +37,33 @@ export default ({
   ]);
 
   useEffect(() => {
+    const onResize = () => {
+      const gl = canvas3DRef.current.getContext("webgl2");
+
+      const dpr = window.devicePixelRatio || 1;
+      const bsr =
+        //@ts-ignore
+        gl.webkitBackingStorePixelRatio ||
+        //@ts-ignore
+        gl.mozBackingStorePixelRatio ||
+        //@ts-ignore
+        gl.msBackingStorePixelRatio ||
+        //@ts-ignore
+        gl.oBackingStorePixelRatio ||
+        //@ts-ignore
+        gl.backingStorePixelRatio ||
+        1;
+
+      const ratio = dpr / bsr;
+
+      canvas3DRef.current.width = window.innerWidth * ratio;
+      canvas3DRef.current.height = window.innerHeight * ratio;
+      canvas3DRef.current.style.width = `${window.innerWidth}px`;
+      canvas3DRef.current.style.height = `${window.innerHeight}px`;
+
+      create();
+    };
+
     if (!canvas3DRef.current || isMobileClient() || isMobile) {
       onWebGLUnavailable();
       return;
@@ -68,32 +96,41 @@ export default ({
       canvas3DRef.current.height = window.innerHeight * ratio;
       canvas3DRef.current.style.width = `${window.innerWidth}px`;
       canvas3DRef.current.style.height = `${window.innerHeight}px`;
-    }
-  }, [canvas3DRef.current]);
-
-  useEffect(() => {
-    if (!canvas3DRef.current) {
-      return;
-    }
-
-    if (canvas3DRef.current) {
-      const gl = canvas3DRef.current.getContext("webgl2");
-      if (!gl) {
-        return;
-      }
-
-      if (canvas2D) {
-        console.log('creating scene')
-        scene.current.dispose();
-        scene.current.initScene(canvas2D, canvas3DRef.current, onSceneCreated);
-      }
+      window.addEventListener("resize", onResize);
     }
 
     return () => {
-      // dispose
-      scene.current.dispose();
+      window.removeEventListener("resize", onResize);
     };
-  }, [canvas2D, canvas3DRef.current]);
+  }, [canvas3DRef.current]);
+
+  const create = () => {
+    if (!canvas3DRef.current || !canvas2D) {
+      return;
+    }
+
+    const gl = canvas3DRef.current.getContext("webgl2");
+    if (!gl) {
+      return;
+    }
+
+    console.log('create');
+
+    scene.current.dispose();
+    scene.current.initScene(canvas2D, canvas3DRef.current, onSceneCreated);
+  };
+
+  useEffect(() => {
+    if (!loaded) return;
+
+    if (canvas2D && canvas3DRef.current) create();
+
+    return () => {
+      // clearTimeout(time);
+      // dispose
+      // scene.current.dispose();
+    };
+  }, [canvas2D, canvas3DRef.current, loaded]);
 
   useEffect(() => {
     return () => {

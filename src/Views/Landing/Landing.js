@@ -14,6 +14,7 @@ import { detectLineWrap } from "../../util/text";
 import Link from "../../Components/Link";
 import ScrollButton from "../../Components/ScrollButton";
 import { isElementInView } from "../../util/misc";
+import { useIntersectionObserver } from "../../util/IntersectionObserver";
 
 export default ({
   drawX,
@@ -23,8 +24,10 @@ export default ({
   color,
   hack,
   isZenMode,
+  loaded,
+  onIntroComplete,
 }) => {
-  const linkContainer = useRef(null);
+  // const linkContainer = useRef(null);
   const nameContainer = useRef(null);
   const arrowContainer = useRef(null);
   const wrapperRef = useRef();
@@ -43,7 +46,7 @@ export default ({
   const displayScrollElement = (
     element,
     transitionAnim = "fade-in-bottom",
-    shouldLog = true
+    shouldLog = false
   ) => {
     if (!element) return;
 
@@ -68,7 +71,7 @@ export default ({
     element.classList.remove("fade-in-grow");
     element.classList.remove("fade-in-bottom");
     element.classList.remove("fade-in-top");
-    element.classList.remove("scrolled");
+    // element.classList.remove("scrolled");
     element.classList.add(transitionAnim);
   };
 
@@ -79,102 +82,38 @@ export default ({
     elementsHiddenRef.current = elementsHidden;
   }, [elementsHidden]);
 
-  const hasShown = useRef(false);
+  const handleVisible = () => {
+    if (!loaded) return;
+
+    setElementsHidden(false);
+    displayScrollElement(nameContainer.current);
+    displayScrollElement(arrowContainer.current, "fade-in-grow");
+    wrapperRef.current.classList.remove("hidden-bg");
+  };
+
+  const handleHidden = () => {
+    if (!loaded) return;
+
+    _onIntroComplete();
+
+    setElementsHidden(true);
+    hideScrollElement(nameContainer.current);
+    hideScrollElement(arrowContainer.current, "fade-out-shrink");
+    wrapperRef.current.classList.add("hidden-bg");
+  };
+
+  useIntersectionObserver(wrapperRef, handleVisible, handleHidden, 0.99, null, -120);
+
   useEffect(() => {
-    let fadeInTimeout;
-    const handleScrollAnimation = (e) => {
-      console.log('handle scroll animation');
-      clearTimeout(fadeInTimeout);
-      const elInView = isElementInView(wrapperRef.current, 50);
-
-      console.log('el in view', elInView, elementsHiddenRef.current, hasShown.current)
-
-      if (elementsHiddenRef.current) hasShown.current = true;
-
-      if (elInView && elementsHiddenRef.current) {
-        setElementsHidden(false);
-        displayScrollElement(linkContainer.current);
-        displayScrollElement(nameContainer.current);
-        displayScrollElement(arrowContainer.current, "fade-in-grow", true);
-        wrapperRef.current.classList.remove("hidden");
-      } else if (!elInView && !elementsHiddenRef.current) {
-        setElementsHidden(true);
-        hideScrollElement(linkContainer.current);
-        hideScrollElement(nameContainer.current);
-        hideScrollElement(arrowContainer.current, "fade-out-shrink", true);
-        wrapperRef.current.classList.add("hidden");
-      }
-
-      // if (isElementInView(wrapperRef.current)) {
-      //   if (wrapperRef.current) {
-      //     wrapperRef.current.classList.add("blurred");
-      //   }
-
-      //   // displayScrollElement(arrowContainer.current);
-      // } else {
-      //   if (wrapperRef.current) {
-      //     wrapperRef.current.classList.remove("blurred");
-      //   }
-
-      //   // hideScrollElement(arrowContainer.current);
-      // }
-    };
-
-    // const handleResize = () => {
-    //   setState((state) => ({ ...state, prevColor: null, isDrawing: true }));
-    // };
-
-    // if (linkContainer.current) {
-    //   setTimeout(() => {
-    //     displayScrollElement(linkContainer.current);
-    //   }, 500);
-    // }
-
-    // if (nameContainer.current) {
-    //   setTimeout(() => {
-    //     displayScrollElement(nameContainer.current);
-    //   }, 500);
-    // }
-
-    // if (arrowContainer.current) {
-    //   setTimeout(() => {
-    //     displayScrollElement(arrowContainer.current);
-    //   }, 500);
-    // }
-
-    window.addEventListener("scroll", handleScrollAnimation);
-    // window.addEventListener("resize", handleResize);
-
-    fadeInTimeout = setTimeout(() => {
-      console.log('fade in timeout')
-      handleScrollAnimation();
-    }, 1000);
-    // handleResize();
-
     return () => {
-      clearTimeout(fadeInTimeout);
-      window.removeEventListener("scroll", handleScrollAnimation);
       clearTimeout(arrowBounceTimeout.current);
       clearTimeout(wrapCheckTimeout.current);
-      // window.removeEventListener("resize", handleResize);
     };
   }, []);
 
-  // useEffect(() => {
-  //   setState((state) => ({
-  //     ...state,
-  //     prevColor: state.curColor,
-  //     curColor: color,
-  //   }));
-  // }, [color]);
-
-  // useEffect(() => {
-  //   setState((state) => ({ ...state, isDrawing }));
-  // }, [isDrawing]);
-
-  // useEffect(() => {
-  //   x.current = drawX;
-  // }, [drawX]);
+  useEffect(() => {
+    if (loaded) handleVisible();
+  }, [loaded]);
 
   const wrapCheckTimeout = useRef();
 
@@ -217,92 +156,131 @@ export default ({
   const [shouldArrowBounce, setShouldArrowBounce] = useState(false);
   const arrowBounceTimeout = useRef();
 
+  const [introStarted, setIntroStarted] = useState(false);
+
+  const [sIntroComplete, setIntroComplete] = useState(false);
+  const introComplete = useRef(false);
+
+  useEffect(() => {
+    introComplete.current = sIntroComplete;
+  }, [sIntroComplete]);
+
+  const _onIntroComplete = () => {
+    if (!introComplete.current) {
+      // introComplete.current = true;
+      setIntroComplete(true);
+      if (onIntroComplete) onIntroComplete();
+
+      if (wrapperRef.current) {
+        wrapperRef.current.classList.remove("no-blur");
+      }
+    }
+  };
+
   return (
     <div className="landing" id="landing">
-      <main>
+      <main id="intro-wrapper-container">
         <div
-          className={`intro-wrapper blur-container no-border ${
-            elementsHidden ? "hidden-complete" : ""
+          className={`intro-wrapper blur-container no-blur no-border ${
+            !introStarted ? "hidden-bg" : ""
           } ${isZenMode ? "hidden-bg" : ""}`}
           ref={wrapperRef}
         >
-          <div className="intro js-scroll" ref={nameContainer}>
-            <ColorCharacters
-              ref={charContainer}
-              style={
-                !resizing.current && state.wrapped
-                  ? { display: "none", ">*": { display: "none" } }
-                  : { fontWeight: "bold" }
-              }
-              string={"Christopher Gomez"}
-              className="Outlined-Text"
-              color={(i) => "white"}
-            />
-            <div
-              style={
-                !resizing.current && state.wrapped
-                  ? { fontWeight: "bold" }
-                  : { display: "none", ">*": { display: "none" } }
-              }
-            >
-              <ColorCharacters
-                // ref={charContainer}
-                string={"Christopher"}
-                className="Outlined-Text"
-                color={(i) => "white"}
-              />
-              <ColorCharacters
-                // ref={charContainer}
-                string={"Gomez"}
-                className="Outlined-Text"
-                color={(i) => "white"}
-              />
-            </div>
+          <div
+            className="js-scroll"
+            ref={nameContainer}
+            onAnimationStart={(e) => {
+              // console.log("animation start", e.target);
+              setIntroStarted(true);
+            }}
+            onAnimationEnd={(e) => {
+              // console.log("animation end", e.target);
 
-            <div className="menu">
-              <ScrollButton scrollTarget=".portfolio">
-                <ColorCharacters string={"Portfolio"} color={(i) => "white"} />
-              </ScrollButton>
-              <ScrollButton scrollTarget=".about">
-                <ColorCharacters string={"About"} color={(i) => "white"} />
-              </ScrollButton>
+              _onIntroComplete();
+            }}
+          >
+            <div className="intro">
+              <div style={{ paddingBottom: ".25em" }}>
+                <ColorCharacters
+                  ref={charContainer}
+                  style={
+                    !resizing.current && state.wrapped
+                      ? { display: "none", ">*": { display: "none" } }
+                      : { fontWeight: "bold" }
+                  }
+                  string={"Christopher Gomez"}
+                  className="Outlined-Text"
+                  color={(i) => "white"}
+                />
+                <div
+                  style={
+                    !resizing.current && state.wrapped
+                      ? { fontWeight: "bold" }
+                      : { display: "none", ">*": { display: "none" } }
+                  }
+                >
+                  <ColorCharacters
+                    // ref={charContainer}
+                    string={"Christopher"}
+                    className="Outlined-Text"
+                    color={(i) => "white"}
+                  />
+                  <ColorCharacters
+                    // ref={charContainer}
+                    string={"Gomez"}
+                    className="Outlined-Text"
+                    color={(i) => "white"}
+                  />
+                </div>
+              </div>
+              <div className="menu">
+                <ScrollButton scrollTarget=".portfolio">
+                  <ColorCharacters
+                    string={"Portfolio"}
+                    color={(i) => "white"}
+                  />
+                </ScrollButton>
+                <ScrollButton scrollTarget=".about">
+                  <ColorCharacters string={"About"} color={(i) => "white"} />
+                </ScrollButton>
+              </div>
+              {/* <GlowingText delay={1000} letters={"Christopher Gomez".split("")} /> */}
             </div>
-            {/* <GlowingText delay={1000} letters={"Christopher Gomez".split("")} /> */}
-          </div>
-          {/* <div className='tagline'>
+            {/* <div className='tagline'>
               <GlowingText delay={1000} letters={tagline}/>
             </div> */}
-          <div className="social animate-icons js-scroll" ref={linkContainer}>
-            <Link newTab href="https://github.com/christopher-gomez">
-              <FontAwesomeIcon
-                style={{
-                  // transition: "color .25s ease-out",
-                  color: "white",
-                }}
-                icon={faGithubSquare}
-              />
-            </Link>
-            <Link
-              newTab
-              href="https://www.linkedin.com/in/christopher-gomez-8489a7186/"
-            >
-              <FontAwesomeIcon
-                style={{
-                  // transition: "color .25s ease-out",
-                  color: "white",
-                }}
-                icon={faLinkedinIn}
-              />
-            </Link>
-            <Link newTab href="https://codepen.io/christophergomez">
-              <FontAwesomeIcon
-                style={{
-                  // transition: "color .25s ease-out",
-                  color: "white",
-                }}
-                icon={faCodepen}
-              />
-            </Link>
+            <div className="social animate-icons">
+              <Link newTab href="https://github.com/christopher-gomez">
+                <FontAwesomeIcon
+                  style={{
+                    // transition: "color .25s ease-out",
+                    color: "white",
+                  }}
+                  icon={faGithubSquare}
+                />
+              </Link>
+              <Link
+                newTab
+                href="https://www.linkedin.com/in/christopher-gomez-8489a7186/"
+              >
+                <FontAwesomeIcon
+                  style={{
+                    // transition: "color .25s ease-out",
+                    color: "white",
+                  }}
+                  icon={faLinkedinIn}
+                />
+              </Link>
+              <Link newTab href="https://codepen.io/christophergomez">
+                <FontAwesomeIcon
+                  style={{
+                    // transition: "color .25s ease-out",
+                    color: "white",
+                  }}
+                  icon={faCodepen}
+                />
+              </Link>
+            </div>
           </div>
         </div>
       </main>
@@ -321,6 +299,12 @@ export default ({
           arrowBounceTimeout.current = setTimeout(() => {
             setShouldArrowBounce(true);
           }, 1000);
+        }}
+        onPointerEnter={() => {
+          setShouldArrowBounce(false);
+        }}
+        onPointerLeave={() => {
+          setShouldArrowBounce(true);
         }}
       >
         <ScrollArrow to=".portfolio" shouldBounce={shouldArrowBounce} />

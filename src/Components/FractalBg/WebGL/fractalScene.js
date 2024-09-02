@@ -57,6 +57,27 @@ export default class Scene {
     this.stats = stats;
   }
 
+  calculateRatio() {
+    const gl = this.renderer.getContext();
+    const dpr = window.devicePixelRatio || 1;
+    const bsr =
+      //@ts-ignore
+      gl.webkitBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.mozBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.msBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.oBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.backingStorePixelRatio ||
+      1;
+
+    const ratio = dpr / bsr;
+
+    this.ratio = ratio;
+  }
+
   /**
    *
    * @param {HTMLCanvasElement} canvas2D
@@ -95,8 +116,9 @@ export default class Scene {
     // renderer.setClearColor(0xffffff, 1); // Set clear color to dark
     renderer.shadowMap.enabled = true;
     renderer.toneMapping = THREE.ReinhardToneMapping;
-    renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer = renderer;
+    this.calculateRatio();
+    renderer.setPixelRatio(this.ratio);
 
     // this.orbitControls = new OrbitControls(camera, renderer.domElement);
 
@@ -258,7 +280,7 @@ export default class Scene {
       uFractalTexture: { value: texture },
       uTime: { value: 0 },
       uResolution: {
-        value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+        value: new THREE.Vector2(window.innerWidth * this.ratio, window.innerHeight * this.ratio),
       },
       uXDriftFactor: { value: this.uXDriftFactor },
       uYDriftFactor: { value: this.uYDriftFactor },
@@ -283,7 +305,7 @@ export default class Scene {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = "Fractal";
     mesh.position.set(0, 0, 11);
-    mesh.userData.isBloomTarget = true;
+    mesh.userData.isBloomTarget = false;
 
     this.fractalMesh = mesh;
     this._scaleFractal();
@@ -311,7 +333,7 @@ export default class Scene {
     this.bloomComposer = bloomComposer;
 
     window.addEventListener("resize", this._onWindowResize.bind(this));
-    onSceneCreated(canvas3D);
+    onSceneCreated(canvas3D, renderer, scene, camera);
     this._animate();
   }
 
@@ -423,7 +445,10 @@ export default class Scene {
 
       if (this.fractalMaterial) {
         this.fractalMaterial.uniforms.uTime.value = time;
-        this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio)
+        this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
+          window.innerWidth * this.ratio,
+          window.innerHeight * this.ratio
+        );
         this.fractalMaterial.uniforms.uXDriftFactor.value = this.uXDriftFactor;
         this.fractalMaterial.uniforms.uYDriftFactor.value = this.uYDriftFactor;
         this.fractalMaterial.uniforms.uNoiseScale.value = this.uNoiseScale;
@@ -591,16 +616,20 @@ export default class Scene {
 
   _onWindowResize() {
     window.clearTimeout(this.cleanTimeout);
+    window.cancelAnimationFrame(this.animationFrame);
+
+    // this.renderer.clear();
 
     this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.position.copy(this.cameraStartPosition);
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.calculateRatio();
+    this.renderer.setPixelRatio(this.ratio);
 
     this.finalComposer.setSize(window.innerWidth, window.innerHeight);
     this.bloomComposer.setSize(window.innerWidth, window.innerHeight);
-
-    this._scaleFractal();
 
     // Create a new empty data buffer to fill the texture
     // For simplicity, let's assume the texture is a square of dimension 512x512 and RGBA format
@@ -618,11 +647,20 @@ export default class Scene {
     // Create a new THREE.DataTexture
     const newTexture = new THREE.DataTexture(data, 512, 512, THREE.RGBAFormat);
     newTexture.needsUpdate = true;
+    this.fractalTexture.needsUpdate = false;
+    this.fractalTexture.dispose();
 
     this.fractalMaterial.uniforms.uFractalTexture.value = newTexture;
+    this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
+      window.innerWidth * this.ratio,
+      window.innerHeight * this.ratio
+    );
+    this._scaleFractal();
 
     this.cleanTimeout = window.setTimeout(() => {
       this.fractalMaterial.uniforms.uFractalTexture.value = this.fractalTexture;
-    }, 500);
+      this.fractalTexture.needsUpdate = true;
+      this._animate();
+    }, 100);
   }
 }

@@ -24,7 +24,6 @@
   }
 
 
-
   .fade {
     animation: fade-out 1s linear;
   }
@@ -165,4 +164,18 @@
       opacity: 0;
     }
   }
+}
+
+.brush-icon {
+  opacity: .5;
+  transition: all .25s linear !important;
+
+  > * {
+    font-size: 1.5em !important;
+  }
+}
+
+.brush-icon:hover {
+  opacity: 1;
+  transition: all 0s linear !important;
 }

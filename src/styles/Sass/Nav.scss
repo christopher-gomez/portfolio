@@ -15,6 +15,7 @@ nav {
   color: white !important;
   backdrop-filter: blur(16px);
   padding: 2rem 1rem;
+  opacity: 0;
   
   &.sticky {
     box-shadow: 0 .1em .1em rgba(118, 118, 118, 0) !important;

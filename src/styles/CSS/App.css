@@ -45,10 +45,13 @@ body::-webkit-scrollbar {
   width: fit-content !important;
   border: 3px solid rgba(255, 255, 255, 0.85);
   opacity: 1;
-  transition: background 1.5s ease-out, opacity 0.5s ease-out, border 0.5s ease-out, color 1.75s ease-out;
-  animation: blur-in 3s 1s ease-out forwards;
+  transition: background 1.5s 0.5s ease-out, opacity 0.5s 1s ease-out, border 0.5s ease-out, color 1.75s ease-out;
+  animation: blur-in 3s 1.5s ease-out both;
   color: rgb(255, 255, 255) !important;
   /* Let's define an animation: */
+}
+.blur-container.no-blur {
+  animation: none;
 }
 .blur-container * {
   color: white !important;
@@ -94,11 +97,12 @@ body::-webkit-scrollbar {
   /* Important */
 }
 .blur-container.hidden-bg {
-  background: rgba(175, 194, 213, 0.25);
+  background: rgba(175, 194, 213, 0);
   color: rgba(255, 255, 255, 0.094);
   border: none;
-  transition: background 0.5s ease-in, border 0.5s ease-in, color 0.5s ease-in;
-  animation: blur-out 0.2s 0.5s ease-in forwards;
+  box-shadow: none;
+  transition: background 0.5s 0.5s ease-in, border 0.5s ease-in, color 0.5s ease-in;
+  animation: blur-out 0.2s 0.15s ease-in both;
   /* Important */
 }
 @keyframes slide-in-left-then-blur {
@@ -190,7 +194,8 @@ body::-webkit-scrollbar {
 }
 
 .fade-out-top {
-  animation: fade-out-top 0.5s ease-out forwards;
+  animation: fade-out-top 1s linear;
+  animation-fill-mode: both;
 }
 
 .fade-in {
@@ -202,7 +207,8 @@ body::-webkit-scrollbar {
 }
 
 .fade-in-bottom {
-  animation: fade-in-bottom 1.5s ease-out forwards;
+  animation: fade-in-bottom 1.25s linear;
+  animation-fill-mode: both;
 }
 
 .fade-in-top {
@@ -290,7 +296,7 @@ body::-webkit-scrollbar {
 @keyframes fade-in-bottom {
   0% {
     transform: translateY(-50px);
-    opacity: 0.7;
+    opacity: 0;
     pointer-events: none;
   }
   50% {
@@ -298,6 +304,7 @@ body::-webkit-scrollbar {
   }
   100% {
     opacity: 1;
+    transform: translateY(0);
     pointer-events: unset;
   }
 }
@@ -307,10 +314,8 @@ body::-webkit-scrollbar {
     opacity: 0;
     pointer-events: none;
   }
-  50% {
-    transform: translateY(0);
-  }
   100% {
+    transform: translateY(0);
     opacity: 1;
     pointer-events: unset;
   }
@@ -318,15 +323,14 @@ body::-webkit-scrollbar {
 @keyframes fade-out-top {
   0% {
     transform: translateY(0);
-    opacity: 1;
     pointer-events: none;
   }
-  99% {
-    opacity: 0;
+  50% {
+    opacity: 0.3;
   }
   100% {
-    transform: translateY(0);
     opacity: 0;
+    transform: translateY(-50px);
     pointer-events: none;
   }
 }

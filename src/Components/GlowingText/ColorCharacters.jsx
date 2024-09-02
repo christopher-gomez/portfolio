@@ -8,21 +8,34 @@ export default React.forwardRef(
     }
 
     return (
-      <div ref={ref} {...others}>
-        {characters.map((letter, i) => {
-          return (
-            <span
-              style={{
-                color: color ? color(i) : "inherit",
-                ...style,
-              }}
-              className={className}
-            >
-              {letter}
-            </span>
-          );
-        })}
-      </div>
+      <span
+        ref={ref}
+        {...others}
+        style={{
+          // color: color ? color(i) : "inherit",
+          color: "white",
+          ...style,
+        }}
+        className={className}
+      >
+        {string}
+      </span>
+      // <div ref={ref} {...others}>
+
+      //   {/* {characters.map((letter, i) => {
+      //     return (
+      //       <span
+      //         style={{
+      //           color: color ? color(i) : "inherit",
+      //           ...style,
+      //         }}
+      //         className={className}
+      //       >
+      //         {letter}
+      //       </span>
+      //     );
+      //   })} */}
+      // </div>
     );
   }
 );

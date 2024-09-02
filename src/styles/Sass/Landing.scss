@@ -54,7 +54,7 @@
       .intro {
         font-size: 3.5rem;
         // font-weight: bold;
-        line-height: 4rem;
+        // line-height: 4rem;
         padding-bottom: 1rem;
         z-index: 2;
         display: flex;
@@ -78,15 +78,16 @@
           font-family: 'Inconsolata', monospace;
 
           .menu__item {
-            // padding: 0.25rem 0;
+            padding: 0.25rem 0;
+            // padding: 0 !important;
             margin: 0 1rem;
             font-size: 1.25rem;
             font-weight: 400;
-            border-bottom: 2px solid transparent;
+            border-bottom: 2px solid white;
 
             &:hover {
               cursor: pointer;
-              border-bottom: 2px solid var(--text-color);
+              border-bottom: 2px solid white;
             }
           }
         }
