@@ -181,21 +181,23 @@ export default ({
     <div className="landing" id="landing">
       <main id="intro-wrapper-container">
         <div
-          className={`intro-wrapper blur-container no-blur no-border ${
+          className={`intro-wrapper blur-container no-border ${
             !introStarted ? "hidden-bg" : ""
-          } ${isZenMode ? "hidden-bg" : ""}`}
+          } ${isZenMode ? "hidden-bg no-blur" : ""}`}
           ref={wrapperRef}
+          onAnimationStart={(e) => {
+            if(wrapperRef.current && !introComplete.current) {
+              wrapperRef.current.classList.add("no-blur");
+            }
+          }}
         >
           <div
             className="js-scroll"
             ref={nameContainer}
             onAnimationStart={(e) => {
-              // console.log("animation start", e.target);
               setIntroStarted(true);
             }}
             onAnimationEnd={(e) => {
-              // console.log("animation end", e.target);
-
               _onIntroComplete();
             }}
           >

@@ -396,10 +396,12 @@ export default (props) => {
   useIntersectionObserver(
     introRef,
     () => {
-      document.querySelector("#zen-viewer").style.display = "block";
+      if (document.querySelector("#zen-viewer"))
+        document.querySelector("#zen-viewer").style.display = "block";
     },
     () => {
-      document.querySelector("#zen-viewer").style.display = "none";
+      if (document.querySelector("#zen-viewer"))
+        document.querySelector("#zen-viewer").style.display = "none";
     },
     0.99,
     null,
@@ -412,7 +414,9 @@ export default (props) => {
     };
 
     introRef.current = document.querySelector(".intro-wrapper");
-    introContainerRef.current = document.querySelector("#intro-wrapper-container");
+    introContainerRef.current = document.querySelector(
+      "#intro-wrapper-container"
+    );
 
     if (isMobile || isMobileClient()) setWebGLAvailable(false);
 
