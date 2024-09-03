@@ -228,6 +228,27 @@ const Router = () => {
         <Routes>
           <Route exact path="/resume" element={<Markdown />} />
           <Route exact path="/" element={<App />} />
+
+          {process.env.NODE_ENV === "development" && (
+            <Route
+              path="/test"
+              element={
+                <ThemeManager>
+                  <Box
+                    sx={{
+                      minHeight: "100vh",
+                      minWidth: "100vw",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FractalBg loaded={true} allowZenMode={true} />
+                  </Box>
+                </ThemeManager>
+              }
+            />
+          )}
         </Routes>
       </BrowserRouter>
     </div>

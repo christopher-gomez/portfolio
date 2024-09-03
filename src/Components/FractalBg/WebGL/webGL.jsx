@@ -9,6 +9,7 @@ export default ({
   onSceneCreated,
   shouldRender = true,
   usePostProcessing = true,
+  canBurstInteract = false,
   xDriftFactor,
   yDriftFactor,
   noiseScale,
@@ -25,7 +26,8 @@ export default ({
       noiseScale,
       distortion,
       shouldRender,
-      usePostProcessing
+      usePostProcessing,
+      canBurstInteract
     );
   }, [
     xDriftFactor,
@@ -34,6 +36,7 @@ export default ({
     distortion,
     shouldRender,
     usePostProcessing,
+    canBurstInteract,
   ]);
 
   useEffect(() => {
@@ -114,8 +117,6 @@ export default ({
       return;
     }
 
-    console.log('create');
-
     scene.current.dispose();
     scene.current.initScene(canvas2D, canvas3DRef.current, onSceneCreated);
   };
@@ -128,14 +129,14 @@ export default ({
     return () => {
       // clearTimeout(time);
       // dispose
-      // scene.current.dispose();
+      if (scene.current) scene.current.dispose();
     };
   }, [canvas2D, canvas3DRef.current, loaded]);
 
   useEffect(() => {
     return () => {
       // dispose
-      scene.current.dispose();
+      if (scene.current) scene.current.dispose();
     };
   }, []);
 

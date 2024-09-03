@@ -4,12 +4,20 @@ import { hslToRgb } from "../../../util/color";
 export function CreateParticles(camera) {
   // Vertex shader for particles
   const particleVertexShader = `
+  // Define the maximum number of simultaneous bursts
+#define MAX_BURSTS 5
+
+uniform vec3 uClickPositions[MAX_BURSTS];
+uniform float uBurstTimes[MAX_BURSTS];
+uniform int uActiveBursts;  // Number of active bursts
+
 uniform float uTime;
 attribute float size; // Add a size attribute
 attribute float phase; // Add a phase attribute
 varying vec3 vColor;
 varying float vPhase;
 varying vec3 modPos;
+varying float vDiffColor;
 
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 float permute(float x){return floor(mod(((x*34.0)+1.0)*x, 289.0));}
@@ -102,6 +110,11 @@ float sNoise(vec4 v){
 
 }
 
+               float easeInOutCubic(float t) {
+    return t < 0.5 ? 4.0 * t * t * t : 1.0 - pow(-2.0 * t + 2.0, 3.0) / 2.0;
+}
+
+
 void main() {
     vColor = color; // Pass color to fragment shader
     vPhase = phase; // Pass the phase to the fragment shader
@@ -139,6 +152,7 @@ void main() {
     float timeOffset = uTime * .15 + vPhase;
     vec4 posTime = vec4(position, timeOffset * .025);
     float noiseValue = sNoise(posTime);
+    
     modPos = position;
     modPos.x += noiseValue * 2.75; // Apply noise uniformly.
     modPos.y += noiseValue * .15; // Apply noise uniformly.
@@ -154,9 +168,61 @@ void main() {
     modPos.y += buoyancy; // Apply buoyancy to y-axis.
     modPos.x += wave; // Apply wave to x-axis.
 
+    // Apply multiple burst effects
+
+    bool foundPrev = false;
+    for (int i = 0; i < 5; i++) {
+        vec3 burstPosition = uClickPositions[i];
+        float burstTime = uBurstTimes[i];
+
+        // Convert modPos to clip space and then to screen space
+        vec4 clipSpacePos = projectionMatrix * modelViewMatrix * vec4(modPos, 1.0);
+        vec3 screenSpacePos = clipSpacePos.xyz / clipSpacePos.w;
+        vec2 screenPos = screenSpacePos.xy * 0.5 + 0.5;
+
+        // Calculate distance from the click position in screen space
+        float dist = distance(screenPos, burstPosition.xy);
+
+        // Clamp uBurstTime to ensure it doesn't exceed the intended duration
+        float clampedBurstTime = min(burstTime, 2.0);
+
+        // Apply burst effect only within a certain radius
+        float radius = 0.1 * (1.0 - smoothstep(0.0, 2.0, clampedBurstTime));  // Decreases over time
+        // float radius = 0.075;
+        if (dist <= radius) {
+            foundPrev = true;
+            // Calculate the force of the burst based on distance and time
+            float burstFactor = 10.5 * (1.0 - smoothstep(0.0, 2.0, clampedBurstTime));  // Decreases over time
+            float burstStrength = (1.0 - (dist / radius)) * burstFactor;  // Adjust the strength
+            // Adjust burstEffect using the clamped time
+                float easedTime = easeInOutCubic(clampedBurstTime / 2.0);  // Normalize time to [0, 1]
+
+                float burstEffect = burstStrength;
+            // float burstEffect = burstStrength * easedTime; // Decreases over time     
+                        // float burstEffect = burstStrength * (1.0 - smoothstep(0.0, 2.0, clampedBurstTime)); // Decreases over time            
+       
+float burstSeed = dot(position.xy, vec2(12.9898, 78.233)) * burstPosition.x * burstPosition.y * float(i + 1); // Use burst index to vary the seed for each burst
+float theta = mod(burstSeed, 6.28318530718);  // Random angle between 0 and 2π
+float phi = acos(2.0 * fract(burstSeed * 0.1) - 1.0); // Random angle between 0 and π
+            
+            vec3 sphericalDirection = vec3(
+                sin(phi) * cos(theta),
+                sin(phi) * sin(theta),
+                0.0
+            );
+            
+            vec3 burstDirection = normalize(sphericalDirection);
+            modPos += sphericalDirection * burstEffect * burstTime * .05;  // Gradually apply the burst over time
+            // vDiffColor = 1.0;
+        }
+        // else {
+        //   if(!foundPrev)
+        //     vDiffColor = 0.0;
+        // }
+    }
+    
     // Breathing size effect
     float breathAmplitude = .25;
-    // float breath = size * (1.0 + breathAmplitude * sin(uTime));
     
     // Independent breathing rates for each particle
     // Create a random speed factor for each particle, this can be passed as an attribute or uniform if varying for each
@@ -173,44 +239,64 @@ void main() {
 
     // Compute point size
     gl_PointSize = breath + (100.0 / size) * fadeFactor; // Adjust the 300.0 factor to scale the points
+
     gl_Position = projectionMatrix * modelViewMatrix * vec4(modPos, 1.0);
 }
 `;
 
   // Fragment shader for particles
   const particleFragmentShader = `
-uniform sampler2D pointTexture;
-uniform float uTime;
-varying vec3 vColor;
-varying float vPhase; // The phase shift of each particle
-uniform float uElapsedTime; // Time since the particles started
-varying vec3 modPos;
-out vec4 fragColor;
-
-void main() {
-  float fadeInDuration = 5.0; // Duration of the fade-in effect in seconds
-  float maxAlpha = 0.8; // Maximum alpha value
-
-  // Calculate base alpha based on fade-in time
-  float alpha = maxAlpha * clamp(uElapsedTime / fadeInDuration, 0.0, 1.0);
-
-  // Apply the flickering effect after the fade-in is complete
-  // if (uElapsedTime >= fadeInDuration) {
-  //     float flickerFrequency = 0.85; // Adjust frequency for a slower flicker
-  //     float flickerAmplitude = 1.0; // Reduce amplitude for subtle flickering
-
-  //     // Ensuring the flicker starts at maximum alpha and oscillates around it
-  //     float flicker = sin(uTime * flickerFrequency + vPhase * 6.28318) * flickerAmplitude + 1.0;
-  //     alpha = maxAlpha * flicker; // Scale alpha by the flickering effect, ensuring it starts at maxAlpha
-  // }
-
-  float distance = length(gl_PointCoord - vec2(0.5, 0.5));
-  float alphaGradient = 1.0 - smoothstep(0.4, 0.5, distance); // Soft edges
-
-  vec4 texColor = texture2D(pointTexture, gl_PointCoord);
-  fragColor = vec4(vColor * texColor.rgb, texColor.a * alpha * alphaGradient);
-}
-`;
+  uniform sampler2D pointTexture;
+  uniform float uTime;
+  varying vec3 vColor;
+  varying float vPhase; // The phase shift of each particle
+  uniform float uElapsedTime; // Time since the particles started
+  varying vec3 modPos;
+  varying float vDiffColor;
+  out vec4 fragColor;
+  
+  void main() {
+    float fadeInDuration = 10.0; // Duration of the fade-in effect in seconds
+    float maxAlpha = 0.6; // Maximum alpha value
+  
+    // Calculate base alpha based on fade-in time
+    float baseAlpha = maxAlpha * clamp(uElapsedTime / fadeInDuration, 0.0, 1.0);
+  
+    float distance = length(gl_PointCoord - vec2(0.5, 0.5));
+    float alphaGradient = 1.0 - smoothstep(0.8, 0.9, distance); // Soft edges
+  
+    // Apply the flickering effect smoothly
+    float flickerFrequency = 0.85; // Adjust frequency for a slower flicker
+    float flickerAmplitude = .5; // Reduce amplitude for subtle flickering
+  
+    // Ensure the flicker effect is smooth and continuous
+    float flicker = sin(uElapsedTime * flickerFrequency + vPhase * 6.28318) * flickerAmplitude + 1.0;
+  
+    // Interpolate the alpha to smoothly transition to the flickering effect
+    float alpha = mix(baseAlpha, maxAlpha * flicker, smoothstep(fadeInDuration * 0.9, fadeInDuration, uElapsedTime));
+  
+    vec4 texColor = texture2D(pointTexture, gl_PointCoord);
+  
+    // Define gradient colors
+    vec3 endColor = vec3(1.0, 1.0, 1.0);
+    vec3 startColor = vec3(120. / 255., 163. / 255., 211. / 255.);
+  
+    // Calculate gradient factor based on position or time
+    float gradientFactor = smoothstep(0.0, 1.0, length(modPos.xyz) / 3.5); // Adjust the division factor for different gradients
+  
+    // Interpolate between the start and end colors
+    vec3 gradientColor = mix(startColor, endColor, gradientFactor);
+  
+    if (vDiffColor > 0.0) {
+      texColor.rgb = vec3(0.0, 1.0, 0.0);
+    } else {
+      texColor.rgb *= gradientColor;
+    }
+  
+    fragColor = vec4(texColor.rgb, texColor.a * alpha * alphaGradient);
+  }
+  `;
+  
 
   const size = 128; // Texture size. Can be changed to suit your needs.
   const canvas = document.createElement("canvas");
@@ -252,7 +338,7 @@ void main() {
     sizes = new THREE.BufferAttribute(new Float32Array(N), 1),
     phases = new THREE.BufferAttribute(new Float32Array(N), 1);
   // Define a base hue for your particles
-  const colorVariation = 0; // Variation in hue for each particle
+  const colorVariation = 100; // Variation in hue for each particle
   const baseHue = 0; // For completely random base hues
 
   for (var i = 0; i < N; i++) {
@@ -261,7 +347,7 @@ void main() {
     // position.setZ(i, Math.min(camera.position.z + 5, position.getZ(i)));
 
     const hue = (baseHue + colorVariation * Math.random()) % 1.0;
-    const saturation = 0; // Adjust for desired saturation
+    const saturation = .15; // Adjust for desired saturation
     const lightness = 0.9; // Adjust for desired lightness
 
     let { r, g, b } = hslToRgb(hue, saturation, lightness);
@@ -278,11 +364,18 @@ void main() {
 
   //   console.log('cam pos: '+camera.position.clone().toArray().toString())
 
+  const clickPositions = new Array(5);
+  for (let i = 0; i < clickPositions.length; i++) {
+    clickPositions[i] = new THREE.Vector3();
+  }
   // Create a shader material for the particles
   const pointMat = new THREE.ShaderMaterial({
     uniforms: {
       pointTexture: { value: pointTex },
+      uClickPositions: { value: clickPositions },
       uTime: { value: 0 },
+      uBurstTimes: { value: new Float32Array(5).fill(0) },
+      uActiveBursts: { value: 0 },
       uElapsedTime: { value: 0 },
       cameraPosition: { value: new THREE.Vector3(0, 0, 12) },
     },
@@ -297,5 +390,9 @@ void main() {
     glslVersion: THREE.GLSL3,
   });
 
-  return new THREE.Points(pointGeom, pointMat);
+  return {
+    points: new THREE.Points(pointGeom, pointMat),
+    geometry: pointGeom,
+    material: pointMat,
+  };
 }

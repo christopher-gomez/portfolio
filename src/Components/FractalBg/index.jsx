@@ -392,16 +392,26 @@ export default (props) => {
 
   const introRef = useRef();
   const introContainerRef = useRef();
+  const [canBurstInteract, setCanBurstInteract] = useState(false);
+  const canBurstInteractRef = useRef(canBurstInteract);
+
+  useEffect(() => {
+    canBurstInteractRef.current = canBurstInteract;
+  }, [canBurstInteract]);
 
   useIntersectionObserver(
     introRef,
     () => {
       if (document.querySelector("#zen-viewer"))
         document.querySelector("#zen-viewer").style.display = "block";
+
+      setCanBurstInteract(true);
     },
     () => {
       if (document.querySelector("#zen-viewer"))
         document.querySelector("#zen-viewer").style.display = "none";
+
+      setCanBurstInteract(false);
     },
     0.99,
     null,
@@ -414,6 +424,10 @@ export default (props) => {
     };
 
     introRef.current = document.querySelector(".intro-wrapper");
+
+    if(!introRef.current)
+      setCanBurstInteract(true);
+    
     introContainerRef.current = document.querySelector(
       "#intro-wrapper-container"
     );
@@ -1728,6 +1742,7 @@ export default (props) => {
           yDriftFactor={fractalPropertiesState.webGL.yDriftFactor}
           noiseScale={fractalPropertiesState.webGL.noiseScale}
           distortion={fractalPropertiesState.webGL.distortion}
+          canBurstInteract={canBurstInteract}
         />
         {!UIState.active /*&& (bgBlur === undefined || bgBlur <= 0.2)*/ && (
           <IconButton

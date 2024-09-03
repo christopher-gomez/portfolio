@@ -28,6 +28,7 @@ export default class Scene {
   cameraEndPosition = new THREE.Vector3(0, 0, 12);
   orbitControls = null;
   useOrbitControls = true;
+  canBurstInteract = false;
 
   /**
    *
@@ -77,6 +78,8 @@ export default class Scene {
 
     this.ratio = ratio;
   }
+
+  burstIndex = 0;
 
   /**
    *
@@ -267,11 +270,24 @@ export default class Scene {
     this.sceneObjectsMats = {};
 
     // startTimeRef.current = Date.now();
-    this.particles = CreateParticles(camera);
+    const particleSystem = CreateParticles(camera);
+    this.pointGeom = particleSystem.geometry;
+    this.pointMat = particleSystem.material;
+    this.particles = particleSystem.points;
     this.particles.name = "Particles";
     this.particles.position.set(0, 0, 10);
     this.particles.userData.isBloomTarget = true;
     // this.particles.renderOrder = 0;
+
+    const MAX_BURSTS = 5; // Maximum number of simultaneous bursts
+    this.burstIndex = 0; // Current index for the next burst
+
+    this.burstTimes = new Float32Array(MAX_BURSTS).fill(0);
+
+    this.burstPositions = new Array(MAX_BURSTS);
+    for (let i = 0; i < MAX_BURSTS; i++) {
+      this.burstPositions[i] = new THREE.Vector3();
+    }
 
     // this.particles.layers.enable(BLOOM_SCENE);
     scene.add(this.particles);
@@ -280,7 +296,10 @@ export default class Scene {
       uFractalTexture: { value: texture },
       uTime: { value: 0 },
       uResolution: {
-        value: new THREE.Vector2(window.innerWidth * this.ratio, window.innerHeight * this.ratio),
+        value: new THREE.Vector2(
+          window.innerWidth * this.ratio,
+          window.innerHeight * this.ratio
+        ),
       },
       uXDriftFactor: { value: this.uXDriftFactor },
       uYDriftFactor: { value: this.uYDriftFactor },
@@ -305,13 +324,20 @@ export default class Scene {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = "Fractal";
     mesh.position.set(0, 0, 11);
-    mesh.userData.isBloomTarget = false;
+    mesh.userData.isBloomTarget = true;
 
     this.fractalMesh = mesh;
     this._scaleFractal();
     // mesh.renderOrder = 1;
     mesh.layers.enable(BLOOM_SCENE);
     scene.add(mesh);
+
+    this.clickPositionDebugCube = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 0.1, 0.1),
+      new THREE.MeshBasicMaterial({ color: "blue" })
+    );
+
+    // scene.add(this.clickPositionDebugCube);
 
     // const planeMesh = new THREE.Mesh(
     //   geometry,
@@ -333,7 +359,12 @@ export default class Scene {
     this.bloomComposer = bloomComposer;
 
     window.addEventListener("resize", this._onWindowResize.bind(this));
+    window.addEventListener("click", this._onClick.bind(this));
+    window.addEventListener("keypress", this._onKeyPress.bind(this));
+    window.addEventListener("keydown", this._onKeyDown.bind(this));
+    window.addEventListener("keyup", this._onKeyUp.bind(this));
     onSceneCreated(canvas3D, renderer, scene, camera);
+    this.clock.start();
     this._animate();
   }
 
@@ -352,7 +383,8 @@ export default class Scene {
     noiseScale,
     distortion,
     shouldRender,
-    usePostProcessing
+    usePostProcessing,
+    canBurstInteract
   ) {
     this.uXDriftFactor = xDriftFactor;
     this.uYDriftFactor = yDriftFactor;
@@ -360,6 +392,7 @@ export default class Scene {
     this.uDistortion = distortion;
     this.shouldRender = shouldRender;
     this.shouldUsePostProcessing = usePostProcessing;
+    this.canBurstInteract = canBurstInteract;
   }
 
   dispose() {
@@ -379,8 +412,14 @@ export default class Scene {
         this.sceneObjectsMats[key].dispose();
       }
     }
-
+    this.delta = 0;
+    this.burstIndex = 0;
+    this.keysDown = {};
     window.removeEventListener("resize", this._onWindowResize);
+    window.removeEventListener("click", this._onClick);
+    window.removeEventListener("keypress", this._onKeyPress);
+    window.removeEventListener("keydown", this._onKeyDown);
+    window.removeEventListener("keyup", this._onKeyUp);
     cancelAnimationFrame(this.animationFrame);
   }
 
@@ -397,13 +436,16 @@ export default class Scene {
     this.fractalMesh.scale.y = planeHeightAtDistance;
   }
 
+  delta = 0;
   _animate(time) {
     this.stats.begin();
 
     if (this.shouldRender) {
       // const elapsedTime = clockRef.current.getElapsedTime();
 
-      const msTime = this.clock.getElapsedTime();
+      const deltaTime = this.clock.getDelta();
+      this.delta += deltaTime;
+      // const msTime = this.clock.getElapsedTime();
 
       time = time / 1000;
 
@@ -434,11 +476,25 @@ export default class Scene {
       }
 
       if (this.particles) {
-        this.particles.material.uniforms.uElapsedTime.value = time;
         this.particles.material.uniforms.uTime.value = time;
+
+        if (this.delta > 7) {
+          this.particles.material.uniforms.uElapsedTime.value += deltaTime;
+        }
+
+        // this.particles.material.uniforms.uBurstTime.value += deltaTime;
         this.particles.material.uniforms.cameraPosition.value =
           this.camera.position.clone();
         // pointsRef.current.material.uniforms.cameraPosition.value = this.camera.position.clone();
+
+        for (let i = 0; i < 5; i++) {
+          this.burstTimes[i] += deltaTime;
+        }
+
+        this.particles.material.uniforms.uBurstTimes.value = this.burstTimes;
+
+        // console.log('this.particles.material.uniforms.uBurstTimes.value', this.particles.material.uniforms.uBurstTimes.value);
+        // console.log('this.particles.material.uniforms.uClickPositions.value', this.particles.material.uniforms.uClickPositions.value);
       }
 
       if (this.fractalTexture) this.fractalTexture.needsUpdate = true;
@@ -614,6 +670,91 @@ export default class Scene {
     return { finalComposer, bloomComposer };
   }
 
+  _vec = new THREE.Vector3();
+  _pos = new THREE.Vector3();
+
+  _onClick(event) {
+    if (!this.canBurstInteract) return;
+
+    this._vec.set(
+      event.clientX / window.innerWidth,
+      1 - event.clientY / window.innerHeight,
+      0
+    );
+
+    // this._vec.unproject(this.camera);
+    // this._vec.sub(this.camera.position).normalize();
+
+    // const distance = (10 - this.camera.position.z) / this._vec.z; // on the particle system plane?
+
+    // this._pos
+    //   .copy(this.camera.position)
+    //   .add(this._vec.multiplyScalar(distance));
+    // this.particles.worldToLocal(this._pos);
+
+    this._applyRippleEffect(this._vec);
+  }
+
+  _applyRippleEffect(clickPosition) {
+    // const rippleRadius = 5; // Radius of the ripple effect
+    // const rippleStrength = 10; // How far particles are pushed away
+
+    // const positions = this.pointGeom.attributes.position.array;
+    // const numParticles = this.pointGeom.attributes.position.count;
+
+    // for (let i = 0; i < numParticles; i++) {
+    //     const particlePos = new THREE.Vector3(
+    //         positions[i * 3],
+    //         positions[i * 3 + 1],
+    //         positions[i * 3 + 2]
+    //     );
+
+    //     const distance = particlePos.distanceTo(clickPosition);
+    //     if (distance < rippleRadius) {
+    //         const offset = particlePos.clone().sub(clickPosition).normalize().multiplyScalar(rippleStrength * (rippleRadius - distance) / rippleRadius);
+
+    //         positions[i * 3] += offset.x;
+    //         positions[i * 3 + 1] += offset.y;
+    //         positions[i * 3 + 2] += offset.z;
+    //     }
+    // }
+
+    // Add the new burst to the arrays
+    // this.burstPositions[this.burstIndex].copy(clickPosition.clone());
+    this.burstTimes[this.burstIndex] = 0.0; // Reset the burst time for this burst
+    this.particles.material.uniforms.uClickPositions.value[
+      this.burstIndex
+    ].copy(clickPosition.clone());
+
+    // Update the index for the next burst
+    this.burstIndex = (this.burstIndex + 1) % 5;
+    // this.pointMat.uniforms.uActiveBursts.value = this.burstIndex;
+
+    // console.log('this.burstIndex', this.burstIndex);
+    // console.log('this.particles.material.uniforms.uClickPositions.value', this.particles.material.uniforms.uClickPositions.value);
+
+    // this.pointGeom.attributes.position.needsUpdate = true;
+    // Store the click position in a uniform
+    // this.pointMat.uniforms.uClickPosition.value.copy(clickPosition);
+    // this.pointMat.uniforms.uBurstTime.value = 0;
+    // this.clickPositionDebugCube.position.copy(clickPosition);
+    // this.clickPositionDebugCube.position.copy(
+    //   this.particles.localToWorld(this.pointMat.uniforms.uClickPosition.value)
+    // );
+
+    const worldPosition = clickPosition.clone();
+    worldPosition.x = worldPosition.x * 2 - 1; // X from [0,1] to [-1,1]
+    worldPosition.y = worldPosition.y * 2 - 1; // Y from [0,1] to [-1,1]
+    // Z can be 0 (near plane), 1 (far plane), or something in between
+
+    // Step 3: Unproject to world space
+    worldPosition.unproject(this.camera);
+    this.clickPositionDebugCube.position.copy(worldPosition);
+
+    // console.log("clickPosition", clickPosition);
+    // console.log("worldPosition", worldPosition);
+  }
+
   _onWindowResize() {
     window.clearTimeout(this.cleanTimeout);
     window.cancelAnimationFrame(this.animationFrame);
@@ -662,5 +803,49 @@ export default class Scene {
       this.fractalTexture.needsUpdate = true;
       this._animate();
     }, 100);
+  }
+
+  _onKeyPress(e) {
+    return;
+    if (e.key === "b") {
+      this._toggleParticleBloom();
+    }
+  }
+
+  keysDown = {};
+  _onKeyDown(e) {
+    this.keysDown[e.key] = true;
+
+    if (this.keysDown["b"] && this.keysDown['p']) {
+      this._toggleParticleBloom();
+    }
+
+    if (this.keysDown["b"] && this.keysDown['f']) {
+      this._toggleFractalBloom();
+    }
+  }
+
+  _onKeyUp(e) {
+    this.keysDown[e.key] = false;
+  }
+
+  _toggleParticleBloom() {
+    if (this.particles && this.particles.layers) {
+      if (this.bloomLayer.test(this.particles.layers) === false) {
+        this.particles.layers.enable(BLOOM_SCENE);
+      } else {
+        this.particles.layers.disable(BLOOM_SCENE);
+      }
+    }
+  }
+
+  _toggleFractalBloom() {
+    if (this.fractalMesh && this.fractalMesh.layers) {
+      if (this.bloomLayer.test(this.fractalMesh.layers) === false) {
+        this.fractalMesh.layers.enable(BLOOM_SCENE);
+      } else {
+        this.fractalMesh.layers.disable(BLOOM_SCENE);
+      }
+    }
   }
 }
