@@ -478,7 +478,7 @@ export default class Scene {
       if (this.particles) {
         this.particles.material.uniforms.uTime.value = time;
 
-        if (this.delta > 7) {
+        if (this.delta > 5) {
           this.particles.material.uniforms.uElapsedTime.value += deltaTime;
         }
 
