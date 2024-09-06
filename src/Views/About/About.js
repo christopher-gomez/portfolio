@@ -14,7 +14,7 @@ export default () => {
   return (
     <div className="about">
       <div className="title">
-        <div className="blur-container no-border">
+        <div className="blur-container main">
           <ColorCharacters
             style={{
               fontSize: "3rem",
@@ -23,7 +23,7 @@ export default () => {
           />
         </div>
         <div className="contact">
-          <div className="blur-container no-border">
+          <div className="blur-container">
             <Link href="mailto:c.gomez3644@gmail.com">Contact 📥</Link>
             <Link newTab style={{ marginLeft: ".5em" }} href={resume}>
               Resume 📋
@@ -41,6 +41,8 @@ export default () => {
             boxShadow: "none",
             backgroundColor: "rgba(44, 48, 59, 0.6862745098) !important",
             backdropFilter: "blur(10px)",
+            border: "2px solid white",
+            borderRadius: ".5em !important",
           }}
         >
           <AccordionSummary
@@ -58,8 +60,8 @@ export default () => {
             >
               <p style={{ fontWeight: 500 }}>
                 <i>
-                  Hi, I'm Chris! Thanks for taking the time to visit and read through my
-                  site.
+                  Hi, I'm Chris! Thanks for taking the time to visit and read
+                  through my site.
                 </i>
               </p>
               <p>
@@ -171,10 +173,11 @@ export default () => {
           expanded={personalExpanded}
           onChange={(event, expanded) => setPersonalExpanded(expanded)}
           sx={{
-            border: "none",
             boxShadow: "none",
             backgroundColor: "rgba(44, 48, 59, 0.6862745098) !important",
             backdropFilter: "blur(10px)",
+            border: "2px solid white",
+            borderRadius: ".5em !important",
           }}
         >
           <AccordionSummary
@@ -215,12 +218,12 @@ export default () => {
                 Even though I live in the bay, I bleed purple and gold. I'm a
                 die hard Lakers fan, but I'll go to any NBA game I can, and will
                 usually watch any game on when I have the time. Some of my
-                earliest core memories include attending a game on Christmas during
-                the Kobe and Shaq era and cheering with my dad in
-                our living room on Sundays, when they still wore the Sunday
-                whites. And although I've gotten older, I find myself with
-                less time to invest into them, I'd really like to see them hang
-                banner #18 soon.
+                earliest core memories include attending a game on Christmas
+                during the Kobe and Shaq era and cheering with my dad in our
+                living room on Sundays, when they still wore the Sunday whites.
+                And although I've gotten older, I find myself with less time to
+                invest into them, I'd really like to see them hang banner #18
+                soon.
               </p>
               <p>
                 I'm happiest when I'm making and eating fresh homemade pasta

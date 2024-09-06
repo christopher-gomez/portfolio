@@ -99,9 +99,9 @@ body::-webkit-scrollbar {
 .blur-container.hidden-bg {
   background: rgba(175, 194, 213, 0);
   color: rgba(255, 255, 255, 0.094);
-  border: none;
+  border: 2px solid rgba(255, 255, 255, 0);
   box-shadow: none;
-  transition: background 0.5s 0.5s ease-in, border 0.5s ease-in, color 0.5s ease-in;
+  transition: background 0.5s 0.5s ease-in, border 0.5s 0.5s ease-in, color 0.5s ease-in;
   animation: blur-out 0.2s 0.15s ease-in both;
   /* Important */
 }
@@ -194,8 +194,17 @@ body::-webkit-scrollbar {
 }
 
 .fade-out-top {
-  animation: fade-out-top 1s linear;
-  animation-fill-mode: both;
+  animation: fade-out-top 1.25s linear;
+  animation-fill-mode: forwards;
+}
+
+.fade-out-top-nav {
+  animation: fade-out-top 1.25s linear;
+  animation-fill-mode: forwards;
+}
+
+.nav-start {
+  transform: translateY(-50px);
 }
 
 .fade-in {
@@ -204,6 +213,10 @@ body::-webkit-scrollbar {
 
 .fade-out {
   animation: fade-out 0.5s ease-in forwards;
+}
+
+.fade-in-intro {
+  animation: fade-in 2s linear forwards;
 }
 
 .fade-in-bottom {
@@ -322,7 +335,7 @@ body::-webkit-scrollbar {
 }
 @keyframes fade-out-top {
   0% {
-    transform: translateY(0);
+    opacity: 1;
     pointer-events: none;
   }
   50% {

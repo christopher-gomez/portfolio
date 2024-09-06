@@ -12,6 +12,7 @@ import {
   faUpRightAndDownLeftFromCenter,
 } from "@fortawesome/free-solid-svg-icons";
 import { ArrowBack, ArrowForward } from "@mui/icons-material";
+import { useIntersectionObserver } from "../../util/IntersectionObserver";
 
 // const useValue = () =>
 //   useState({
@@ -369,6 +370,8 @@ const PortfolioItem = ({
     if (allowHoverFocus !== undefined && !allowHoverFocus && state.hovered)
       setState((s) => ({ ...s, hovered: false }));
   }, [allowHoverFocus]);
+
+  useIntersectionObserver(entireElem, handleTextOverflow, () => {}, .5);
 
   const [curImage, setCurImage] = useState(0);
 

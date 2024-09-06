@@ -19,6 +19,9 @@
 .about .title > * {
   margin-bottom: 1em;
 }
+.about .title > .main {
+  padding: 0 1em;
+}
 .about > * {
   z-index: 1;
 }

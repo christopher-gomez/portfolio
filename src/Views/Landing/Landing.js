@@ -75,17 +75,9 @@ export default ({
     element.classList.add(transitionAnim);
   };
 
-  const [elementsHidden, setElementsHidden] = useState(true);
-  const elementsHiddenRef = useRef(false);
-
-  useEffect(() => {
-    elementsHiddenRef.current = elementsHidden;
-  }, [elementsHidden]);
-
   const handleVisible = () => {
     if (!loaded) return;
 
-    setElementsHidden(false);
     displayScrollElement(nameContainer.current);
     displayScrollElement(arrowContainer.current, "fade-in-grow");
     wrapperRef.current.classList.remove("hidden-bg");
@@ -96,7 +88,6 @@ export default ({
 
     _onIntroComplete();
 
-    setElementsHidden(true);
     hideScrollElement(nameContainer.current);
     hideScrollElement(arrowContainer.current, "fade-out-shrink");
     wrapperRef.current.classList.add("hidden-bg");
@@ -181,7 +172,7 @@ export default ({
     <div className="landing" id="landing">
       <main id="intro-wrapper-container">
         <div
-          className={`intro-wrapper blur-container no-border ${
+          className={`intro-wrapper blur-container white-border ${
             !introStarted ? "hidden-bg" : ""
           } ${isZenMode ? "hidden-bg no-blur" : ""}`}
           ref={wrapperRef}

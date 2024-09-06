@@ -99,6 +99,8 @@ export default (props) => {
     onFadeOutBegin,
     onFadeOutEnd,
     loaded,
+    introComplete,
+    onSceneCreated,
     ...others
   } = props;
 
@@ -595,9 +597,6 @@ export default (props) => {
   }
 
   function init(isErase) {
-    console.groupCollapsed("init");
-    console.trace();
-    console.groupEnd();
     // console.log("init");
     if (
       isErase === undefined &&
@@ -1710,7 +1709,8 @@ export default (props) => {
           }}
         />
         <WebGL
-          loaded={true}
+          loaded={introComplete}
+          introComplete={introComplete}
           canvas2D={textureRef.current}
           shouldRender={animationState.useWebGL}
           onSceneCreated={(canvas, renderer) => {
@@ -1728,6 +1728,8 @@ export default (props) => {
               maxTextureSize,
               maxVertexUniformVectors,
             });
+
+            if(onSceneCreated) onSceneCreated();
           }}
           onWebGLUnavailable={() => {
             // originalFractalProperties.colors = [
@@ -1736,6 +1738,7 @@ export default (props) => {
             // ];
             setAnimationState((s) => ({ ...s, useWebGL: false }));
             setWebGLAvailable(false);
+            if(onSceneCreated) onSceneCreated();
             // drawCanvasElem.current = drawCanvas.current;
           }}
           xDriftFactor={fractalPropertiesState.webGL.xDriftFactor}
@@ -1743,6 +1746,7 @@ export default (props) => {
           noiseScale={fractalPropertiesState.webGL.noiseScale}
           distortion={fractalPropertiesState.webGL.distortion}
           canBurstInteract={canBurstInteract}
+          shouldBlur={!canBurstInteract}
         />
         {!UIState.active /*&& (bgBlur === undefined || bgBlur <= 0.2)*/ && (
           <IconButton

@@ -10,11 +10,13 @@ export default ({
   shouldRender = true,
   usePostProcessing = true,
   canBurstInteract = false,
+  shouldBlur = false,
   xDriftFactor,
   yDriftFactor,
   noiseScale,
   distortion,
   loaded,
+  introComplete
 }) => {
   const canvas3DRef = React.useRef(null);
   const scene = useRef(new Scene());
@@ -27,7 +29,9 @@ export default ({
       distortion,
       shouldRender,
       usePostProcessing,
-      canBurstInteract
+      canBurstInteract,
+      shouldBlur,
+      introComplete
     );
   }, [
     xDriftFactor,
@@ -37,6 +41,8 @@ export default ({
     shouldRender,
     usePostProcessing,
     canBurstInteract,
+    shouldBlur,
+    introComplete
   ]);
 
   useEffect(() => {
@@ -64,7 +70,7 @@ export default ({
       canvas3DRef.current.style.width = `${window.innerWidth}px`;
       canvas3DRef.current.style.height = `${window.innerHeight}px`;
 
-      create();
+      // create();
     };
 
     if (!canvas3DRef.current || isMobileClient() || isMobile) {

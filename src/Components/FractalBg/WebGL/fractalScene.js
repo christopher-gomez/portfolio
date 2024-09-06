@@ -1,9 +1,10 @@
 import * as THREE from "three";
-import { CreateParticles } from "./particles";
+import { FragmentShader, VertexShader } from "./particles";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import fractalShader from "./fractalShader";
 import floorDiffuse from "../../../Assets/Textures/Hardwood/hardwood2_diffuse.jpg";
@@ -11,6 +12,7 @@ import floorBump from "../../../Assets/Textures/Hardwood/hardwood2_bump.jpg";
 import floorRoughness from "../../../Assets/Textures/Hardwood/hardwood2_roughness.jpg";
 import { createNoise3D } from "simplex-noise";
 import Stats from "stats.js";
+import { hslToRgb } from "../../../util/color";
 
 var ENTIRE_SCENE = 0,
   BLOOM_SCENE = 1;
@@ -29,6 +31,7 @@ export default class Scene {
   orbitControls = null;
   useOrbitControls = true;
   canBurstInteract = false;
+  shouldBlur = false;
 
   /**
    *
@@ -80,6 +83,8 @@ export default class Scene {
   }
 
   burstIndex = 0;
+
+  firstCreate = true;
 
   /**
    *
@@ -270,7 +275,7 @@ export default class Scene {
     this.sceneObjectsMats = {};
 
     // startTimeRef.current = Date.now();
-    const particleSystem = CreateParticles(camera);
+    const particleSystem = this._createParticleSystem();
     this.pointGeom = particleSystem.geometry;
     this.pointMat = particleSystem.material;
     this.particles = particleSystem.points;
@@ -350,13 +355,11 @@ export default class Scene {
     // mesh.renderOrder = 1;
     // this.particles.renderOrder = 2;
 
-    const { finalComposer, bloomComposer } = this._setupPostProccesing(
-      renderer,
-      scene,
-      camera
-    );
+    const { finalComposer, bloomComposer, bokehPass } =
+      this._setupPostProccesing(renderer, scene, camera);
     this.finalComposer = finalComposer;
     this.bloomComposer = bloomComposer;
+    this.bokehPass = bokehPass;
 
     window.addEventListener("resize", this._onWindowResize.bind(this));
     window.addEventListener("click", this._onClick.bind(this));
@@ -384,7 +387,9 @@ export default class Scene {
     distortion,
     shouldRender,
     usePostProcessing,
-    canBurstInteract
+    canBurstInteract,
+    shouldBlur,
+    introComplete
   ) {
     this.uXDriftFactor = xDriftFactor;
     this.uYDriftFactor = yDriftFactor;
@@ -393,6 +398,21 @@ export default class Scene {
     this.shouldRender = shouldRender;
     this.shouldUsePostProcessing = usePostProcessing;
     this.canBurstInteract = canBurstInteract;
+    this.shouldBlur = shouldBlur;
+
+    if(introComplete && this.firstCreate) {
+      this.firstCreate = false;
+
+      window.setTimeout(() => {
+        this._addParticles(250, new THREE.Vector3(0, .4, 0));
+        window.setTimeout(() => {
+          this._addParticles(150, new THREE.Vector3(-.35, .3, 0));
+          this._addParticles(150, new THREE.Vector3(.35, .3, 0));
+          this._addParticles(150, new THREE.Vector3(-.5, .15, 0));
+          this._addParticles(150, new THREE.Vector3(.5, .15, 0));
+        }, 0)
+      }, 0);      
+    }
   }
 
   dispose() {
@@ -478,9 +498,9 @@ export default class Scene {
       if (this.particles) {
         this.particles.material.uniforms.uTime.value = time;
 
-        if (this.delta > 5) {
-          this.particles.material.uniforms.uElapsedTime.value += deltaTime;
-        }
+        // if (this.delta > 5) {
+        this.particles.material.uniforms.uElapsedTime.value += deltaTime;
+        // }
 
         // this.particles.material.uniforms.uBurstTime.value += deltaTime;
         this.particles.material.uniforms.cameraPosition.value =
@@ -495,6 +515,8 @@ export default class Scene {
 
         // console.log('this.particles.material.uniforms.uBurstTimes.value', this.particles.material.uniforms.uBurstTimes.value);
         // console.log('this.particles.material.uniforms.uClickPositions.value', this.particles.material.uniforms.uClickPositions.value);
+
+        this._updateParticles(deltaTime);
       }
 
       if (this.fractalTexture) this.fractalTexture.needsUpdate = true;
@@ -580,6 +602,15 @@ export default class Scene {
         this.bloomComposer &&
         this.finalComposer
       ) {
+        if (this.bokehPass) {
+          // Update the focus in the bokehPass with the new focus value
+          this.bokehPass.uniforms.focus.value = THREE.MathUtils.lerp(
+            this.bokehPass.uniforms.focus.value,
+            this.shouldBlur ? 100.0 : 0.0,
+            0.02
+          );
+        }
+
         this.scene.traverse((obj) => {
           if (
             obj.userData.isBloomTarget &&
@@ -624,6 +655,13 @@ export default class Scene {
     bloomPass.strength = 0.5;
     bloomPass.radius = 0.5;
 
+    // Depth of Field (Bokeh) Pass
+    var bokehPass = new BokehPass(scene, camera, {
+      focus: 0.0, // Objects in focus at this distance
+      aperture: 0.0001, // Camera aperture size (affects blur)
+      maxblur: 1.0, // Maximum blur amount
+    });
+
     var bloomComposer = new EffectComposer(renderer);
     bloomComposer.addPass(renderScene);
     bloomComposer.addPass(bloomPass);
@@ -665,13 +703,15 @@ export default class Scene {
 
     var finalComposer = new EffectComposer(renderer);
     finalComposer.addPass(renderScene);
+    finalComposer.addPass(bokehPass); // Adding Depth of Field pass
     finalComposer.addPass(finalPass);
 
-    return { finalComposer, bloomComposer };
+    return { finalComposer, bloomComposer, bokehPass };
   }
 
   _vec = new THREE.Vector3();
-  _pos = new THREE.Vector3();
+  _worldPos = new THREE.Vector3();
+  _localPos = new THREE.Vector3();
 
   _onClick(event) {
     if (!this.canBurstInteract) return;
@@ -682,17 +722,23 @@ export default class Scene {
       0
     );
 
-    // this._vec.unproject(this.camera);
-    // this._vec.sub(this.camera.position).normalize();
+    const ndcX = (event.clientX / window.innerWidth) * 2 - 1; // Range [-1, 1]
+    const ndcY = -(event.clientY / window.innerHeight) * 2 + 1; // Range [-1, 1]
+    this._worldPos.set(ndcX, ndcY, 0.5); // Z is in the range [0, 1]
 
-    // const distance = (10 - this.camera.position.z) / this._vec.z; // on the particle system plane?
+    this._worldPos.unproject(this.camera);
+    this._worldPos.sub(this.camera.position).normalize();
 
-    // this._pos
-    //   .copy(this.camera.position)
-    //   .add(this._vec.multiplyScalar(distance));
-    // this.particles.worldToLocal(this._pos);
+    const distance = (10 - this.camera.position.z) / this._worldPos.z; // on the particle system plane?
+
+    this._localPos
+      .copy(this.camera.position)
+      .add(this._worldPos.multiplyScalar(distance));
+    this.particles.worldToLocal(this._localPos);
 
     this._applyRippleEffect(this._vec);
+
+    this._addParticles(Math.random() * 150 + 50, this._localPos);
   }
 
   _applyRippleEffect(clickPosition) {
@@ -742,17 +788,320 @@ export default class Scene {
     //   this.particles.localToWorld(this.pointMat.uniforms.uClickPosition.value)
     // );
 
-    const worldPosition = clickPosition.clone();
-    worldPosition.x = worldPosition.x * 2 - 1; // X from [0,1] to [-1,1]
-    worldPosition.y = worldPosition.y * 2 - 1; // Y from [0,1] to [-1,1]
-    // Z can be 0 (near plane), 1 (far plane), or something in between
+    // const worldPosition = clickPosition.clone();
+    // worldPosition.x = worldPosition.x * 2 - 1; // X from [0,1] to [-1,1]
+    // worldPosition.y = worldPosition.y * 2 - 1; // Y from [0,1] to [-1,1]
+    // // Z can be 0 (near plane), 1 (far plane), or something in between
 
-    // Step 3: Unproject to world space
-    worldPosition.unproject(this.camera);
-    this.clickPositionDebugCube.position.copy(worldPosition);
+    // // Step 3: Unproject to world space
+    // worldPosition.unproject(this.camera);
+    // this.clickPositionDebugCube.position.copy(worldPosition);
 
     // console.log("clickPosition", clickPosition);
     // console.log("worldPosition", worldPosition);
+  }
+
+  _createParticleTexture() {
+    const size = 128; // Texture size. Can be changed to suit your needs.
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+
+    // Create radial gradient
+    const center = size / 2;
+    // Create radial gradient with smoother transitions
+    const gradient = context.createRadialGradient(
+      center,
+      center,
+      0,
+      center,
+      center,
+      center
+    );
+    gradient.addColorStop(0, "rgba(255,255,255,1)"); // Solid white in the center
+    gradient.addColorStop(0.1, "rgba(255,255,255,0.9)"); // Almost solid
+    gradient.addColorStop(0.25, "rgba(255,255,255,0.5)"); // Half transparency
+    gradient.addColorStop(0.5, "rgba(255,255,255,0.1)"); // Mostly transparent
+    gradient.addColorStop(1, "rgba(255,255,255,0)"); // Fully transparent at the edges
+
+    // Apply the gradient to the canvas
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+
+    var pointTex = new THREE.CanvasTexture(canvas);
+    pointTex.minFilter = THREE.LinearFilter;
+    pointTex.magFilter = THREE.LinearFilter;
+    //   pointTex.colorSpace = THREE.SRGBColorSpace;
+
+    return pointTex;
+  }
+
+  _createParticleSystem(numParticles = 2000) {
+    const pointTex = this._createParticleTexture();
+    const pointGeom = this._addParticles(numParticles);
+
+    const clickPositions = new Array(5);
+    for (let i = 0; i < clickPositions.length; i++) {
+      clickPositions[i] = new THREE.Vector3();
+    }
+    // Create a shader material for the particles
+    const pointMat = new THREE.ShaderMaterial({
+      uniforms: {
+        pointTexture: { value: pointTex },
+        uClickPositions: { value: clickPositions },
+        uTime: { value: 0 },
+        uBurstTimes: { value: new Float32Array(5).fill(0) },
+        uActiveBursts: { value: 0 },
+        uElapsedTime: { value: 0 },
+        cameraPosition: { value: new THREE.Vector3(0, 0, 12) },
+      },
+      vertexShader: VertexShader,
+      fragmentShader: FragmentShader,
+      blending: THREE.AdditiveBlending,
+      depthTest: true,
+      depthWrite: false,
+      transparent: true,
+      vertexColors: true,
+      sizeAttenuation: true,
+      glslVersion: THREE.GLSL3,
+    });
+
+    return {
+      points: new THREE.Points(pointGeom, pointMat),
+      geometry: pointGeom,
+      material: pointMat,
+    };
+  }
+
+  _addParticles(numParticles, position = null) {
+    if (!this.pointGeom) {
+      const N = numParticles;
+
+      var position = new THREE.BufferAttribute(new Float32Array(3 * N), 3),
+        // color = new THREE.BufferAttribute(new Float32Array(3 * N), 3),
+        v = new THREE.Vector3(),
+        sizes = new THREE.BufferAttribute(new Float32Array(N), 1),
+        permanents = new THREE.BufferAttribute(new Float32Array(N), 1),
+        lives = new THREE.BufferAttribute(new Float32Array(N), 1),
+        maxLives = new THREE.BufferAttribute(new Float32Array(N), 1),
+        phases = new THREE.BufferAttribute(new Float32Array(N), 1);
+      // Define a base hue for your particles
+      // const colorVariation = 100; // Variation in hue for each particle
+      // const baseHue = 0; // For completely random base hues
+
+      for (var i = 0; i < N; i++) {
+        v.randomDirection().setLength(10 * Math.pow(Math.random(), 1));
+        position.setXYZ(i, v.x, 0, v.z);
+        // position.setZ(i, Math.min(camera.position.z + 5, position.getZ(i)));
+
+        // const hue = (baseHue + colorVariation * Math.random()) % 1.0;
+        // const saturation = 0.15; // Adjust for desired saturation
+        // const lightness = 0.9; // Adjust for desired lightness
+
+        // let { r, g, b } = hslToRgb(hue, saturation, lightness);
+        // color.setXYZ(i, r / 255, g / 255, b / 255); // Ensure colors are normalized between 0 and 1
+        sizes.setX(i, 5.5 + Math.random() * 25.25);
+        phases.setX(i, Math.random() * 2 * Math.PI);
+        permanents.setX(i, 1.0);
+        lives.setX(i, 0.0);
+        maxLives.setX(i, 0.0);
+      }
+
+      var pointGeom = new THREE.BufferGeometry();
+      pointGeom.setAttribute("position", position);
+      // pointGeom.setAttribute("color", color);
+      pointGeom.setAttribute("size", sizes);
+      pointGeom.setAttribute("phase", phases);
+      pointGeom.setAttribute("permanent", permanents);
+      pointGeom.setAttribute("life", lives);
+      pointGeom.setAttribute("maxLife", maxLives);
+
+      return pointGeom;
+    } else if (position) {
+      const pointGeom = this.pointGeom;
+
+      const currentCount = pointGeom.attributes.position.count;
+      const newCount = currentCount + numParticles;
+
+      // Create new Float32Arrays with the updated size
+      const newPositions = new Float32Array(newCount * 3);
+      // const newColors = new Float32Array(newCount * 3);
+      const newSizes = new Float32Array(newCount);
+      const newPhases = new Float32Array(newCount);
+      const newPermanents = new Float32Array(newCount);
+      const newLives = new Float32Array(newCount);
+      const newMaxLives = new Float32Array(newCount);
+
+      // Copy the existing data into the new arrays
+      newPositions.set(pointGeom.attributes.position.array);
+      // newColors.set(pointGeom.attributes.color.array);
+      newSizes.set(pointGeom.attributes.size.array);
+      newPhases.set(pointGeom.attributes.phase.array);
+      newPermanents.set(pointGeom.attributes.permanent.array);
+      newLives.set(pointGeom.attributes.life.array);
+      newMaxLives.set(pointGeom.attributes.maxLife.array);
+
+      // Create a vector to randomize positions
+      // const v = new THREE.Vector3();
+      // const colorVariation = 100;
+      // const baseHue = 0;
+
+      // Add the new particles
+      for (let i = currentCount; i < newCount; i++) {
+        // Set random position for each particle
+        // v.randomDirection().setLength(10 * Math.pow(Math.random(), 1));
+
+        newPositions[i * 3] = position.x;
+        newPositions[i * 3 + 1] = position.y;
+        newPositions[i * 3 + 2] = position.z;
+
+        // Set random color for each particle using HSL
+        // const hue = (baseHue + colorVariation * Math.random()) % 1.0;
+        // const saturation = 0.15;
+        // const lightness = 0.9;
+        // const { r, g, b } = hslToRgb(hue, saturation, lightness);
+        // newColors[i * 3] = r / 255;
+        // newColors[i * 3 + 1] = g / 255;
+        // newColors[i * 3 + 2] = b / 255;
+
+        // Set random size and phase
+        newSizes[i] = 5.5 + Math.random() * 25.25;
+        newPhases[i] = Math.random() * 2 * Math.PI;
+        newPermanents[i] = 0.0;
+        newLives[i] = 0.0;
+        newMaxLives[i] = Math.random() * (Math.random() * 5.0 + 3.0) + 1.0;
+      }
+
+      // Update the geometry attributes with the new data
+      pointGeom.setAttribute(
+        "position",
+        new THREE.BufferAttribute(newPositions, 3)
+      );
+      // pointGeom.setAttribute("color", new THREE.BufferAttribute(newColors, 3));
+      pointGeom.setAttribute("size", new THREE.BufferAttribute(newSizes, 1));
+      pointGeom.setAttribute("phase", new THREE.BufferAttribute(newPhases, 1));
+      pointGeom.setAttribute(
+        "permanent",
+        new THREE.BufferAttribute(newPermanents, 1)
+      );
+      pointGeom.setAttribute("life", new THREE.BufferAttribute(newLives, 1));
+      pointGeom.setAttribute(
+        "maxLife",
+        new THREE.BufferAttribute(newMaxLives, 1)
+      );
+
+      // Inform Three.js that the attributes have been updated
+      pointGeom.attributes.position.needsUpdate = true;
+      // pointGeom.attributes.color.needsUpdate = true;
+      pointGeom.attributes.size.needsUpdate = true;
+      pointGeom.attributes.phase.needsUpdate = true;
+      pointGeom.attributes.permanent.needsUpdate = true;
+      pointGeom.attributes.life.needsUpdate = true;
+      pointGeom.attributes.maxLife.needsUpdate = true;
+    }
+  }
+
+  _updateParticles(deltaTime) {
+    if (!this.pointGeom) return;
+    const pointGeom = this.pointGeom;
+
+    const positions = pointGeom.attributes.position.array;
+    const sizes = pointGeom.attributes.size.array;
+    const phases = pointGeom.attributes.phase.array;
+    const lives = pointGeom.attributes.life.array;
+    const permanents = pointGeom.attributes.permanent.array; // Permanent flag
+    const maxLives = pointGeom.attributes.maxLife.array;
+
+    let activeParticleCount = 0; // Counter for active particles
+    let hasTemporaryParticles = false;
+    let particleDied = false; // To track if any particle exceeded its lifespan
+
+    // Create an array to track which particles are still alive
+    let aliveParticles = [];
+
+    // First pass: loop to determine which particles are still alive
+    for (let i = 0; i < lives.length; i++) {
+      // Check if there are any temporary particles
+      if (permanents[i] === 0.0) {
+        lives[i] += deltaTime;
+
+        // Remove the temporary particle if it exceeds its lifespan
+        if (lives[i] >= maxLives[i]) {
+          particleDied = true;
+          continue; // Skip this particle since it's dead
+        }
+
+        hasTemporaryParticles = true; // Mark that temporary particles still exist
+      }
+
+      // If the particle is still alive, push its index to the aliveParticles array
+      aliveParticles.push(i);
+    }
+
+    // If no temporary particles remain and no particles died this frame, exit
+    if (!hasTemporaryParticles && !particleDied) {
+      return;
+    }
+
+    // Second pass: Compact the particle data to remove dead particles
+    for (let i = 0; i < aliveParticles.length; i++) {
+      const idx = aliveParticles[i];
+      const destIdx = activeParticleCount;
+
+      // Copy positions and other attributes for active particles
+      positions[destIdx * 3] = positions[idx * 3];
+      positions[destIdx * 3 + 1] = positions[idx * 3 + 1];
+      positions[destIdx * 3 + 2] = positions[idx * 3 + 2];
+
+      sizes[destIdx] = sizes[idx];
+      phases[destIdx] = phases[idx];
+      lives[destIdx] = lives[idx];
+      maxLives[destIdx] = maxLives[idx];
+      permanents[destIdx] = permanents[idx]; // Permanent flag
+
+      activeParticleCount++; // Increment the count of active particles
+    }
+
+    // Update the BufferGeometry to only include active particles
+    pointGeom.setDrawRange(0, activeParticleCount); // Render only active particles
+
+    // Now, update the BufferAttributes to reflect the new set of active particles
+    pointGeom.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        positions.subarray(0, activeParticleCount * 3),
+        3
+      )
+    );
+    pointGeom.setAttribute(
+      "size",
+      new THREE.BufferAttribute(sizes.subarray(0, activeParticleCount), 1)
+    );
+    pointGeom.setAttribute(
+      "phase",
+      new THREE.BufferAttribute(phases.subarray(0, activeParticleCount), 1)
+    );
+    pointGeom.setAttribute(
+      "permanent",
+      new THREE.BufferAttribute(permanents.subarray(0, activeParticleCount), 1)
+    );
+    pointGeom.setAttribute(
+      "life",
+      new THREE.BufferAttribute(lives.subarray(0, activeParticleCount), 1)
+    );
+    pointGeom.setAttribute(
+      "maxLife",
+      new THREE.BufferAttribute(maxLives.subarray(0, activeParticleCount), 1)
+    );
+
+    // Mark the attributes as needing an update
+    pointGeom.attributes.position.needsUpdate = true;
+    pointGeom.attributes.size.needsUpdate = true;
+    pointGeom.attributes.phase.needsUpdate = true;
+    pointGeom.attributes.life.needsUpdate = true;
+    pointGeom.attributes.permanent.needsUpdate = true;
+    pointGeom.attributes.maxLife.needsUpdate = true;
   }
 
   _onWindowResize() {
@@ -816,12 +1165,16 @@ export default class Scene {
   _onKeyDown(e) {
     this.keysDown[e.key] = true;
 
-    if (this.keysDown["b"] && this.keysDown['p']) {
+    if (this.keysDown["b"] && this.keysDown["p"]) {
       this._toggleParticleBloom();
     }
 
-    if (this.keysDown["b"] && this.keysDown['f']) {
+    if (this.keysDown["b"] && this.keysDown["f"]) {
       this._toggleFractalBloom();
+    }
+
+    if (this.keysDown["b"] && this.keysDown["l"]) {
+      this.shouldBlur = !this.shouldBlur;
     }
   }
 

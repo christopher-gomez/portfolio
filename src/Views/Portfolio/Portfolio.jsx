@@ -234,7 +234,7 @@ export default ({
       <div className="portfolio">
         <div className="content-grid">
           <div className={"title"}>
-            <div className="blur-container no-border">
+            <div className="blur-container">
               <ColorCharacters
                 style={{
                   transition:
@@ -247,7 +247,7 @@ export default ({
               />
             </div>
             <div
-              className="blur-container no-border"
+              className="blur-container"
               style={{
                 display: "flex",
                 alignItems: "center",

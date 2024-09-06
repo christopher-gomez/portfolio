@@ -175,10 +175,15 @@ const App = () => {
         <CircularProgress />
       </Box>
       <Box
-        sx={{ opacity: canDisplayFractal ? 1 : 0, transition: "opacity 2s" }}
+        sx={{ opacity: 0 }}
+        className={`${canDisplayFractal && introComplete ? "fade-in-intro" : ""}`}
       >
         <FractalBg
           loaded={introComplete}
+          introComplete={introComplete}
+          onSceneCreated={() => {
+            setCanDisplayFractal(true);
+          }}
           allowZenMode={true}
           onToggleUI={(showing) => {
             setState((state) => ({
@@ -190,7 +195,7 @@ const App = () => {
           }}
         />
       </Box>
-      <Nav forceSticky={state.forceStickyNav} shouldHide={shouldHideNav} />
+      <Nav introComplete={introComplete}/>
       <Transition visible={state.contentShowing}>
         <Landing
           {...state}
@@ -199,9 +204,9 @@ const App = () => {
           onIntroComplete={() => {
             setIntroComplete(true);
 
-            setTimeout(() => {
-              setCanDisplayFractal(true);
-            }, 0);
+            // setTimeout(() => {
+              // setCanDisplayFractal(true);
+            // }, 0);
           }}
         />
         <Portfolio
@@ -243,7 +248,7 @@ const Router = () => {
                       justifyContent: "center",
                     }}
                   >
-                    <FractalBg loaded={true} allowZenMode={true} />
+                    <FractalBg loaded={true} allowZenMode={true} introComplete={true} />
                   </Box>
                 </ThemeManager>
               }
