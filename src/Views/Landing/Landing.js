@@ -93,7 +93,14 @@ export default ({
     wrapperRef.current.classList.add("hidden-bg");
   };
 
-  useIntersectionObserver(wrapperRef, handleVisible, handleHidden, 0.99, null, -120);
+  useIntersectionObserver(
+    wrapperRef,
+    handleVisible,
+    handleHidden,
+    0.99,
+    null,
+    -120
+  );
 
   useEffect(() => {
     return () => {
@@ -162,9 +169,9 @@ export default ({
       setIntroComplete(true);
       if (onIntroComplete) onIntroComplete();
 
-      if (wrapperRef.current) {
-        wrapperRef.current.classList.remove("no-blur");
-      }
+      // if (wrapperRef.current) {
+      //   wrapperRef.current.classList.remove("no-blur");
+      // }
     }
   };
 
@@ -172,14 +179,20 @@ export default ({
     <div className="landing" id="landing">
       <main id="intro-wrapper-container">
         <div
-          className={`intro-wrapper blur-container white-border ${
+          className={`intro-wrapper blur-container white-border no-blur${
             !introStarted ? "hidden-bg" : ""
           } ${isZenMode ? "hidden-bg no-blur" : ""}`}
           ref={wrapperRef}
           onAnimationStart={(e) => {
-            if(wrapperRef.current && !introComplete.current) {
+            if (wrapperRef.current && !introComplete.current) {
               wrapperRef.current.classList.add("no-blur");
             }
+          }}
+          onPointerEnter={() => {
+            wrapperRef.current.classList.remove("no-blur");
+          }}
+          onPointerLeave={() => {
+            wrapperRef.current.classList.add("no-blur");
           }}
         >
           <div

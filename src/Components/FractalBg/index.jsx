@@ -417,7 +417,7 @@ export default (props) => {
     },
     0.99,
     null,
-    -200
+    -120
   );
 
   useEffect(() => {
@@ -427,9 +427,8 @@ export default (props) => {
 
     introRef.current = document.querySelector(".intro-wrapper");
 
-    if(!introRef.current)
-      setCanBurstInteract(true);
-    
+    if (!introRef.current) setCanBurstInteract(true);
+
     introContainerRef.current = document.querySelector(
       "#intro-wrapper-container"
     );
@@ -519,6 +518,8 @@ export default (props) => {
     // resetFractalPathsColors(fractalRef.current);
   }, [fractalPropertiesState.colors]);
 
+  const [canBeginDraw, setCanBeginDraw] = useState(false);
+
   useEffect(() => {
     // if (!loaded) return;
 
@@ -544,7 +545,7 @@ export default (props) => {
       init();
     }
     // }
-  }, [animationState.isDrawing]);
+  }, [animationState.isDrawing, canBeginDraw]);
 
   const [canLoadWebGL, setCanLoadWebGL] = useState(false);
 
@@ -598,6 +599,11 @@ export default (props) => {
 
   function init(isErase) {
     // console.log("init");
+
+    console.groupCollapsed("init");
+    console.trace();
+    console.groupEnd();
+
     if (
       isErase === undefined &&
       animationStateRef.current.shouldEraseOnRedraw &&
@@ -757,7 +763,6 @@ export default (props) => {
     //draw paths
     for (let j = 0; j < drawsPerFrame; j++) {
       fractal.drawCount++;
-
       if (isErase) fractal.prevPaths = redrawFractal(fractal, onComplete);
       else {
         fractal.paths = draw(fractal, onComplete);
@@ -1729,7 +1734,7 @@ export default (props) => {
               maxVertexUniformVectors,
             });
 
-            if(onSceneCreated) onSceneCreated();
+            if (onSceneCreated) onSceneCreated();
           }}
           onWebGLUnavailable={() => {
             // originalFractalProperties.colors = [
@@ -1738,9 +1743,11 @@ export default (props) => {
             // ];
             setAnimationState((s) => ({ ...s, useWebGL: false }));
             setWebGLAvailable(false);
-            if(onSceneCreated) onSceneCreated();
+            setCanBeginDraw(true);
+            if (onSceneCreated) onSceneCreated();
             // drawCanvasElem.current = drawCanvas.current;
           }}
+          redraw={beginErase}
           xDriftFactor={fractalPropertiesState.webGL.xDriftFactor}
           yDriftFactor={fractalPropertiesState.webGL.yDriftFactor}
           noiseScale={fractalPropertiesState.webGL.noiseScale}

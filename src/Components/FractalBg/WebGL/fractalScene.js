@@ -3,6 +3,7 @@ import { FragmentShader, VertexShader } from "./particles";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
@@ -15,7 +16,8 @@ import Stats from "stats.js";
 import { hslToRgb } from "../../../util/color";
 
 var ENTIRE_SCENE = 0,
-  BLOOM_SCENE = 1;
+  BLOOM_SCENE = 1,
+  NO_BLOOM_SCENE = 2;
 
 export default class Scene {
   shouldRender = true;
@@ -268,9 +270,13 @@ export default class Scene {
 
     this.bloomLayer = new THREE.Layers();
     this.bloomLayer.set(BLOOM_SCENE);
+    this.noBloomLayer = new THREE.Layers();
+    this.noBloomLayer.set(NO_BLOOM_SCENE);
 
     this.ignoreBloomPassMat = new THREE.MeshBasicMaterial({
       color: "black",
+      transparent: true,
+      opacity: 0,
     });
     this.sceneObjectsMats = {};
 
@@ -295,6 +301,8 @@ export default class Scene {
     }
 
     // this.particles.layers.enable(BLOOM_SCENE);
+    // this.particles.layers.enable(NO_BLOOM_SCENE);
+
     scene.add(this.particles);
 
     const uniforms = {
@@ -335,6 +343,7 @@ export default class Scene {
     this._scaleFractal();
     // mesh.renderOrder = 1;
     mesh.layers.enable(BLOOM_SCENE);
+    // mesh.layers.enable(NO_BLOOM_SCENE);
     scene.add(mesh);
 
     this.clickPositionDebugCube = new THREE.Mesh(
@@ -355,10 +364,19 @@ export default class Scene {
     // mesh.renderOrder = 1;
     // this.particles.renderOrder = 2;
 
-    const { finalComposer, bloomComposer, bokehPass } =
-      this._setupPostProccesing(renderer, scene, camera);
+    const {
+      finalComposer,
+      bokehPass,
+      bloomPass,
+      renderTarget,
+      finalPass,
+      bloomComposer,
+    } = this._setupPostProccesing(renderer, scene, camera);
     this.finalComposer = finalComposer;
+    this.finalPass = finalPass;
+    this.renderTarget = renderTarget;
     this.bloomComposer = bloomComposer;
+    this.bloomPass = bloomPass;
     this.bokehPass = bokehPass;
 
     window.addEventListener("resize", this._onWindowResize.bind(this));
@@ -371,6 +389,13 @@ export default class Scene {
     this._animate();
   }
 
+  setCanvas(canvas2D,) {
+
+    // this.renderer.setSize(window.innerWidth, window.innerHeight);
+    // this.calculateRatio();
+    // this.renderer.setPixelRatio(this.ratio);
+  }
+
   /**
    *
    * @param {number} xDriftFactor
@@ -380,7 +405,7 @@ export default class Scene {
    * @param {boolean} shouldRender
    * @param {boolean} usePostProcessing
    */
-  setParams(
+  setParams({
     xDriftFactor,
     yDriftFactor,
     noiseScale,
@@ -389,8 +414,10 @@ export default class Scene {
     usePostProcessing,
     canBurstInteract,
     shouldBlur,
-    introComplete
-  ) {
+    introComplete,
+    onFireWorkIntroComplete,
+    redraw,
+  }) {
     this.uXDriftFactor = xDriftFactor;
     this.uYDriftFactor = yDriftFactor;
     this.uNoiseScale = noiseScale;
@@ -399,19 +426,25 @@ export default class Scene {
     this.shouldUsePostProcessing = usePostProcessing;
     this.canBurstInteract = canBurstInteract;
     this.shouldBlur = shouldBlur;
+    this.onFireWorkIntroComplete = onFireWorkIntroComplete;
 
-    if(introComplete && this.firstCreate) {
+    if (introComplete && this.firstCreate) {
       this.firstCreate = false;
 
       window.setTimeout(() => {
-        this._addParticles(250, new THREE.Vector3(0, .4, 0));
+        this._addParticles(250, new THREE.Vector3(0, 0.4, 0));
         window.setTimeout(() => {
-          this._addParticles(150, new THREE.Vector3(-.35, .3, 0));
-          this._addParticles(150, new THREE.Vector3(.35, .3, 0));
-          this._addParticles(150, new THREE.Vector3(-.5, .15, 0));
-          this._addParticles(150, new THREE.Vector3(.5, .15, 0));
-        }, 0)
-      }, 0);      
+          this._addParticles(150, new THREE.Vector3(-0.35, 0.3, 0));
+          this._addParticles(150, new THREE.Vector3(0.35, 0.3, 0));
+          this._addParticles(150, new THREE.Vector3(-0.5, 0.15, 0));
+          this._addParticles(150, new THREE.Vector3(0.5, 0.15, 0));
+
+          window.setTimeout(() => {
+            if (redraw) redraw();
+            this.canDrawFractal = true;
+          }, 4000);
+        }, 0);
+      }, 0);
     }
   }
 
@@ -519,19 +552,23 @@ export default class Scene {
         this._updateParticles(deltaTime);
       }
 
-      if (this.fractalTexture) this.fractalTexture.needsUpdate = true;
+      if (this.canDrawFractal) {
+        if (this.fractalTexture) this.fractalTexture.needsUpdate = true;
 
-      if (this.fractalMaterial) {
-        this.fractalMaterial.uniforms.uTime.value = time;
-        this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
-          window.innerWidth * this.ratio,
-          window.innerHeight * this.ratio
-        );
-        this.fractalMaterial.uniforms.uXDriftFactor.value = this.uXDriftFactor;
-        this.fractalMaterial.uniforms.uYDriftFactor.value = this.uYDriftFactor;
-        this.fractalMaterial.uniforms.uNoiseScale.value = this.uNoiseScale;
-        this.fractalMaterial.uniforms.uDistortion.value = this.uDistortion;
-        this.fractalMaterial.needsUpdate = true;
+        if (this.fractalMaterial) {
+          this.fractalMaterial.uniforms.uTime.value = time;
+          this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
+            window.innerWidth * this.ratio,
+            window.innerHeight * this.ratio
+          );
+          this.fractalMaterial.uniforms.uXDriftFactor.value =
+            this.uXDriftFactor;
+          this.fractalMaterial.uniforms.uYDriftFactor.value =
+            this.uYDriftFactor;
+          this.fractalMaterial.uniforms.uNoiseScale.value = this.uNoiseScale;
+          this.fractalMaterial.uniforms.uDistortion.value = this.uDistortion;
+          this.fractalMaterial.needsUpdate = true;
+        }
       }
 
       if (this.bulbLights) {
@@ -593,51 +630,100 @@ export default class Scene {
         this.renderer.render(this.scene, this.camera);
       }
 
-      if (
-        this.shouldUsePostProcessing &&
-        this.scene &&
-        this.bloomLayer &&
-        this.ignoreBloomPassMat &&
-        this.sceneObjectsMats &&
-        this.bloomComposer &&
-        this.finalComposer
-      ) {
-        if (this.bokehPass) {
-          // Update the focus in the bokehPass with the new focus value
-          this.bokehPass.uniforms.focus.value = THREE.MathUtils.lerp(
-            this.bokehPass.uniforms.focus.value,
-            this.shouldBlur ? 100.0 : 0.0,
-            0.02
-          );
-        }
+      this._postProcessing();
 
-        this.scene.traverse((obj) => {
-          if (
-            obj.userData.isBloomTarget &&
-            this.bloomLayer.test(obj.layers) === false
-          ) {
-            this.sceneObjectsMats[obj.uuid] = obj.material;
-            obj.material = this.ignoreBloomPassMat;
-          }
-        });
+      this.stats.end();
 
-        this.bloomComposer.render();
-        this.scene.traverse((obj) => {
-          if (this.sceneObjectsMats[obj.uuid]) {
-            obj.material = this.sceneObjectsMats[obj.uuid];
-            delete this.sceneObjectsMats[obj.uuid];
-          }
-        });
-
-        this.finalComposer.render();
-      }
+      this.animationFrame = requestAnimationFrame(this._animate.bind(this));
     }
-
-    this.stats.end();
-
-    this.animationFrame = requestAnimationFrame(this._animate.bind(this));
   }
 
+  bokehPassBlurred = false;
+
+  _postProcessing() {
+    if (
+      this.shouldUsePostProcessing &&
+      this.scene &&
+      this.bloomLayer &&
+      this.ignoreBloomPassMat &&
+      this.sceneObjectsMats &&
+      this.finalComposer
+    ) {
+      if (this.bokehPass) {
+        // Update the focus in the bokehPass with the new focus value
+        this.bokehPass.uniforms.focus.value = THREE.MathUtils.lerp(
+          this.bokehPass.uniforms.focus.value,
+          this.shouldBlur ? 100.0 : 0.0,
+          0.02
+        );
+
+        if (this.bokehPass.uniforms.focus.value >= 99.9) {
+          this.bokehPassBlurred = true;
+        } else {
+          this.bokehPassBlurred = false;
+        }
+      }
+
+      if (this.bloomPass) {
+        this.bloomPass.strength = THREE.MathUtils.lerp(
+          this.bloomPass.strength,
+          this.shouldBlur ? 0.45 : 0.35,
+          0.009
+        );
+
+        this.bloomPass.radius = THREE.MathUtils.lerp(
+          this.bloomPass.radius,
+          this.shouldBlur ? 2.5 : 0.5,
+          0.009
+        );
+
+        // this.bloomPass.threshold = THREE.MathUtils.lerp(
+        //   this.bloomPass.threshold,
+        //   this.shouldBlur && this.bokehPassBlurred ? 1 : 0,
+        //   0.009
+        // );
+      }
+
+      // 1. Render the scene to the render target (base scene)
+      // this.renderer.setRenderTarget(this.renderTarget); // Set render target
+      // this.renderer.clear();
+
+      // Traverse the scene and replace materials for objects that should not bloom
+      this.scene.traverse((obj) => {
+        if (this.bloomLayer.test(obj.layers) === false) {
+          this.sceneObjectsMats[obj.uuid] = obj.material;
+          obj.material = this.ignoreBloomPassMat; // Use material that ignores bloom
+        }
+      });
+
+      // Render the base scene
+      // this.renderer.render(this.scene, this.camera);
+
+      // 2. Render the bloom pass (for objects in the bloom layer)
+      this.bloomComposer.render();
+
+      // Restore the original materials
+      this.scene.traverse((obj) => {
+        if (this.sceneObjectsMats[obj.uuid]) {
+          obj.material = this.sceneObjectsMats[obj.uuid]; // Restore original material
+          delete this.sceneObjectsMats[obj.uuid];
+        }
+      });
+
+      // 3. Set the base texture and bloom texture for the final pass
+      // this.finalPass.uniforms.baseTexture.value = this.renderTarget.texture;
+      // this.finalPass.uniforms.bloomTexture.value =
+      //   this.bloomComposer.renderTarget2.texture;
+      // this.finalPass.uniforms.baseTexture.needsUpdate = true;
+      // this.finalPass.uniforms.bloomTexture.needsUpdate = true;
+      // this.finalPass.needsSwap = true;
+
+      // 3. Render final composer (handles both bloom and base)
+      this.finalComposer.render();
+      // this.renderer.setRenderTarget(null); // Reset render target
+      // this.finalComposer.render();
+    }
+  }
   /**
    *
    * @param {THREE.WebGLRenderer} renderer
@@ -647,68 +733,76 @@ export default class Scene {
   _setupPostProccesing(renderer, scene, camera) {
     var renderScene = new RenderPass(scene, camera);
 
+    // Bloom Pass
     var bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight)
     );
-
-    bloomPass.threshold = 0.1;
-    bloomPass.strength = 0.5;
+    bloomPass.threshold = 0;
+    bloomPass.strength = 0.35;
     bloomPass.radius = 0.5;
 
     // Depth of Field (Bokeh) Pass
     var bokehPass = new BokehPass(scene, camera, {
-      focus: 0.0, // Objects in focus at this distance
-      aperture: 0.0001, // Camera aperture size (affects blur)
-      maxblur: 1.0, // Maximum blur amount
+      focus: 0.0,
+      aperture: 0.0001,
+      maxblur: 1.0,
     });
 
-    var bloomComposer = new EffectComposer(renderer);
-    bloomComposer.addPass(renderScene);
-    bloomComposer.addPass(bloomPass);
+    // Create a render target for the base scene
+    var renderTarget = new THREE.WebGLRenderTarget(
+      window.innerWidth,
+      window.innerHeight
+    );
 
+    // Bloom Composer: Only render objects that require bloom
+    var bloomComposer = new EffectComposer(renderer);
+    bloomComposer.addPass(renderScene); // Render the scene for bloom
+    bloomComposer.addPass(bloomPass); // Bloom pass
+    bloomComposer.renderToScreen = false;
+    // Final Shader Pass: Combines the base texture and bloom texture
     var finalPass = new ShaderPass(
       new THREE.ShaderMaterial({
         uniforms: {
-          baseTexture: { value: null },
-          bloomTexture: { value: bloomComposer.renderTarget2.texture },
+          baseTexture: { value: null }, // Base scene texture
+          bloomTexture: { value: bloomComposer.renderTarget2.texture }, // Bloom output
         },
         vertexShader: `
-  
-        varying vec2 vUv;
-  
-        void main() {
-  
-          vUv = uv;
-  
-          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-  
-        }`,
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+          }`,
         fragmentShader: `
-  
-        uniform sampler2D baseTexture;
-        uniform sampler2D bloomTexture;
-  
-        varying vec2 vUv;
-  
-        void main() {
-  
-          gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
-  
-        }`,
-        defines: {},
+          uniform sampler2D baseTexture;
+          uniform sampler2D bloomTexture;
+          varying vec2 vUv;
+          void main() {
+            gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
+          }`,
       }),
       "baseTexture"
     );
     finalPass.needsSwap = true;
 
+    // Final Composer: Combines base and bloom
+    // const outputPass = new OutputPass();
     var finalComposer = new EffectComposer(renderer);
-    finalComposer.addPass(renderScene);
-    finalComposer.addPass(bokehPass); // Adding Depth of Field pass
-    finalComposer.addPass(finalPass);
+    finalComposer.addPass(renderScene); // Render the base scene
+    // finalComposer.addPass(bloomPass); // Bloom pass
+    finalComposer.addPass(finalPass); // Final pass to merge base and bloom
+    finalComposer.addPass(bokehPass); // Depth of Field pass
+    // finalComposer.addPass(outputPass);
 
-    return { finalComposer, bloomComposer, bokehPass };
+    // Return necessary objects
+    return {
+      finalComposer,
+      bokehPass,
+      bloomPass,
+      renderTarget,
+      finalPass,
+      bloomComposer, // Keep the bloom composer
+    };
   }
-
   _vec = new THREE.Vector3();
   _worldPos = new THREE.Vector3();
   _localPos = new THREE.Vector3();
@@ -1107,50 +1201,61 @@ export default class Scene {
   _onWindowResize() {
     window.clearTimeout(this.cleanTimeout);
     window.cancelAnimationFrame(this.animationFrame);
+    if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
     // this.renderer.clear();
+    this.resizeTimeout = setTimeout(() => {
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.position.copy(this.cameraStartPosition);
+      this.camera.updateProjectionMatrix();
 
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.position.copy(this.cameraStartPosition);
-    this.camera.updateProjectionMatrix();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.calculateRatio();
+      this.renderer.setPixelRatio(this.ratio);
 
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.calculateRatio();
-    this.renderer.setPixelRatio(this.ratio);
+      this.renderTarget.setSize(window.innerWidth, window.innerHeight);
+      this.finalComposer.setSize(window.innerWidth, window.innerHeight);
+      this.bloomComposer.setSize(window.innerWidth, window.innerHeight);
+      this.bloomPass.setSize(window.innerWidth, window.innerHeight);
+      this.bokehPass.setSize(window.innerWidth, window.innerHeight);
 
-    this.finalComposer.setSize(window.innerWidth, window.innerHeight);
-    this.bloomComposer.setSize(window.innerWidth, window.innerHeight);
+      // Create a new empty data buffer to fill the texture
+      // For simplicity, let's assume the texture is a square of dimension 512x512 and RGBA format
+      const size = 512 * 512;
+      const data = new Uint8Array(4 * size);
 
-    // Create a new empty data buffer to fill the texture
-    // For simplicity, let's assume the texture is a square of dimension 512x512 and RGBA format
-    const size = 512 * 512;
-    const data = new Uint8Array(4 * size);
+      // Fill the buffer with your new data (e.g., set all pixels to transparent)
+      for (let i = 0; i < size; i++) {
+        data[4 * i] = 0; // R
+        data[4 * i + 1] = 0; // G
+        data[4 * i + 2] = 0; // B
+        data[4 * i + 3] = 0; // A, 0 is fully transparent
+      }
 
-    // Fill the buffer with your new data (e.g., set all pixels to transparent)
-    for (let i = 0; i < size; i++) {
-      data[4 * i] = 0; // R
-      data[4 * i + 1] = 0; // G
-      data[4 * i + 2] = 0; // B
-      data[4 * i + 3] = 0; // A, 0 is fully transparent
-    }
+      // Create a new THREE.DataTexture
+      const newTexture = new THREE.DataTexture(
+        data,
+        512,
+        512,
+        THREE.RGBAFormat
+      );
+      newTexture.needsUpdate = true;
+      this.fractalTexture.needsUpdate = false;
+      this.fractalTexture.dispose();
 
-    // Create a new THREE.DataTexture
-    const newTexture = new THREE.DataTexture(data, 512, 512, THREE.RGBAFormat);
-    newTexture.needsUpdate = true;
-    this.fractalTexture.needsUpdate = false;
-    this.fractalTexture.dispose();
+      this.fractalMaterial.uniforms.uFractalTexture.value = newTexture;
+      this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
+        window.innerWidth * this.ratio,
+        window.innerHeight * this.ratio
+      );
+      this._scaleFractal();
 
-    this.fractalMaterial.uniforms.uFractalTexture.value = newTexture;
-    this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
-      window.innerWidth * this.ratio,
-      window.innerHeight * this.ratio
-    );
-    this._scaleFractal();
-
-    this.cleanTimeout = window.setTimeout(() => {
-      this.fractalMaterial.uniforms.uFractalTexture.value = this.fractalTexture;
-      this.fractalTexture.needsUpdate = true;
-      this._animate();
+      this.cleanTimeout = window.setTimeout(() => {
+        this.fractalMaterial.uniforms.uFractalTexture.value =
+          this.fractalTexture;
+        this.fractalTexture.needsUpdate = true;
+        this._animate();
+      }, 100);
     }, 100);
   }
 
@@ -1186,8 +1291,10 @@ export default class Scene {
     if (this.particles && this.particles.layers) {
       if (this.bloomLayer.test(this.particles.layers) === false) {
         this.particles.layers.enable(BLOOM_SCENE);
+        this.particles.layers.disable(NO_BLOOM_SCENE);
       } else {
         this.particles.layers.disable(BLOOM_SCENE);
+        this.particles.layers.enable(NO_BLOOM_SCENE);
       }
     }
   }
@@ -1196,8 +1303,10 @@ export default class Scene {
     if (this.fractalMesh && this.fractalMesh.layers) {
       if (this.bloomLayer.test(this.fractalMesh.layers) === false) {
         this.fractalMesh.layers.enable(BLOOM_SCENE);
+        this.fractalMesh.layers.disable(NO_BLOOM_SCENE);
       } else {
         this.fractalMesh.layers.disable(BLOOM_SCENE);
+        this.fractalMesh.layers.enable(NO_BLOOM_SCENE);
       }
     }
   }

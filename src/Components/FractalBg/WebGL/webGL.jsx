@@ -16,13 +16,15 @@ export default ({
   noiseScale,
   distortion,
   loaded,
-  introComplete
+  introComplete,
+  redraw,
+  onFireWorkIntroComplete,
 }) => {
   const canvas3DRef = React.useRef(null);
   const scene = useRef(new Scene());
 
   useEffect(() => {
-    scene.current.setParams(
+    scene.current.setParams({
       xDriftFactor,
       yDriftFactor,
       noiseScale,
@@ -31,8 +33,10 @@ export default ({
       usePostProcessing,
       canBurstInteract,
       shouldBlur,
-      introComplete
-    );
+      introComplete,
+      onFireWorkIntroComplete,
+      redraw
+    });
   }, [
     xDriftFactor,
     yDriftFactor,
@@ -42,8 +46,18 @@ export default ({
     usePostProcessing,
     canBurstInteract,
     shouldBlur,
-    introComplete
+    introComplete,
+    onFireWorkIntroComplete,
+    redraw
   ]);
+
+  const canvas2DRef = useRef(null);
+
+  useEffect(() => {
+    if (canvas2D) {
+      canvas2DRef.current = canvas2D;
+    }
+  }, [canvas2D]);
 
   useEffect(() => {
     const onResize = () => {
@@ -70,6 +84,9 @@ export default ({
       canvas3DRef.current.style.width = `${window.innerWidth}px`;
       canvas3DRef.current.style.height = `${window.innerHeight}px`;
 
+      if(scene.current) {
+        scene.current.setCanvas(canvas2DRef.current);
+      }
       // create();
     };
 
