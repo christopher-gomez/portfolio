@@ -1,39 +1,188 @@
 import * as THREE from "three";
 import { FragmentShader, VertexShader } from "./particles";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import fractalShader from "./fractalShader";
-import floorDiffuse from "../../../Assets/Textures/Hardwood/hardwood2_diffuse.jpg";
-import floorBump from "../../../Assets/Textures/Hardwood/hardwood2_bump.jpg";
-import floorRoughness from "../../../Assets/Textures/Hardwood/hardwood2_roughness.jpg";
 import { createNoise3D } from "simplex-noise";
 import Stats from "stats.js";
-import { hslToRgb } from "../../../util/color";
+import { applyEasing, smoothLerp } from "../../../util/misc";
 
 var ENTIRE_SCENE = 0,
   BLOOM_SCENE = 1,
   NO_BLOOM_SCENE = 2;
 
+/**
+ * Description placeholder
+ *
+ * @type {{ firstFullRenderComplete: boolean; beganCompleteSequence: boolean; hitClimax: boolean; hitLow: boolean; totallyComplete: boolean; }}
+ */
+var INITIAL_FIRST_RENDER_COMPLETE_STATE = {
+  firstFullRenderComplete: false,
+  beganCompleteSequence: false,
+  hitClimax: false,
+  hitLow: false,
+  totallyComplete: true,
+};
+
+var INITIAL_FRACTAL_UNIFORM_TRANSITION_STATE = {
+  noiseScale: {
+    target: 1.75,
+    previousTarget: 1.75,
+    original: 1.75,
+    current: 1.75,
+    start: 1.75,
+    factor: 0,
+    state: "idle",
+    currentTime: 0,
+    duration: 100,
+
+    hitDisturbedPeak: false,
+
+    EASE_TYPE: "linear",
+
+    BLURRED_TARGET: 4.0,
+    UNBLURRED_TARGET: 1.75,
+  },
+  distortion: {
+    target: 0.0,
+    previousTarget: 0.0,
+    current: 0.0,
+    start: 0.0,
+
+    original: 0.01,
+    state: "idle",
+    currentTime: 0,
+    unblurredDuration: 10,
+    blurredDuration: 10,
+
+    EASE_TYPE: "linear",
+
+    BLURRED_TARGET: 1.0,
+    UNBLURRED_TARGET: 0.0,
+
+    factor: 0,
+  },
+  xDriftFactor: {
+    target: 0.1,
+    previousTarget: 0.1,
+    original: 0.1,
+    current: 0.1,
+    start: 0.1,
+    state: "idle",
+    currentTime: 0,
+    unblurredDuration: .25,
+    blurredDuration: 0.25,
+    EASE_TYPE: "linear",
+    BLURRED_TARGET: 0.01,
+    UNBLURRED_TARGET: 0.1,
+  },
+  yDriftFactor: {
+    target: 0.05,
+    previousTarget: 0.05,
+    original: 0.05,
+    current: 0.05,
+    start: 0.05,
+    state: "idle",
+    currentTime: 0,
+    unblurredDuration: .25,
+    blurredDuration: 0.25,
+    EASE_TYPE: "linear",
+    BLURRED_TARGET: 0.01,
+    UNBLURRED_TARGET: 0.05,
+  },
+};
+
+/**
+ * Description placeholder
+ *
+ * @type {{ flashClimax: boolean; flashFinish: boolean; flashTime: number; flashDuration: number; }}
+ */
+var INITIAL_BLUR_EFFECT_STATE = {
+  flashClimax: false,
+  flashFinish: false,
+  flashTime: 0,
+  flashDuration: 5.5,
+};
+
+var INITIAL_BLOOM_STATE = {
+  targetStrength: 0,
+  previousTargetStrength: 0,
+  currentStrength: 0,
+  startStrength: 0,
+  currentStrengthTransitionEasing: "linear",
+  currentMaxStrengthThreshold: undefined,
+  strengthIntroDone: false,
+  UNBLURRED_STRENGTH: 0.25,
+  BLURRED_STRENGTH: 0.85,
+  INTRO_TARGET_STRENGTH_TRANSITION_EASING: "easeOutBack",
+  UNBLURRED_TARGET_STRENGTH_TRANSITION_EASING: "easeOutSine",
+  BLURRED_TARGET_STRENGTH_TRANSITION_EASING: "linear",
+  UNBLURRED_MAX_STRENGTH_THRESHOLD: undefined,
+  BLURRED_MAX_STRENGTH_THRESHOLD: 1.0,
+
+  targetRadius: 0,
+  controlledRadius: 0,
+  previousTargetRadius: 0,
+  currentRadius: 0,
+  UNBLURRED_RADIUS: 0.5,
+  BLURRED_RADIUS: 1.0,
+  TARGET_RADIUS_TRANSITION_EASE: "easeInOutBack",
+
+  currentTransitionTime: 0,
+  currentTransitionDuration: 0,
+  INTRO_TRANSITION_DURATION: 2.0,
+  UNBLURRED_TRANSITION_DURATION: 2.5,
+  BLURRED_TRANSITION_DURATION: 5.0,
+
+  overrideBloomBehavior: false,
+};
+
 export default class Scene {
   shouldRender = true;
   shouldUsePostProcessing = true;
 
-  uXDriftFactor = 0.01;
-  uYDriftFactor = 0.05;
-  uNoiseScale = 1.75;
-  uDistortion = 0.01;
-
   cameraStartPosition = new THREE.Vector3(0, 0, 13);
   cameraEndPosition = new THREE.Vector3(0, 0, 12);
-  orbitControls = null;
-  useOrbitControls = true;
   canBurstInteract = false;
   shouldBlur = false;
+
+  burstIndex = 0;
+
+  firstCreate = true;
+
+  firstRenderCompleteState = INITIAL_FIRST_RENDER_COMPLETE_STATE;
+
+  fractalUniformTransitionState = INITIAL_FRACTAL_UNIFORM_TRANSITION_STATE;
+
+  drawCompleted = false;
+
+  totalTime = 0;
+  flowTime = 0;
+  resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+
+  bokehPassBlurred = false;
+
+  blurEffectState = INITIAL_BLUR_EFFECT_STATE;
+
+  bloomState = INITIAL_BLOOM_STATE;
+
+  lastRealWorldTime = performance.now();
+
+  _vec = new THREE.Vector3();
+  _worldPos = new THREE.Vector3();
+  _localPos = new THREE.Vector3();
+  _mouseCast = new THREE.Vector2();
+  _raycaster = new THREE.Raycaster();
+
+  keysDown = {};
+  needsKeyReset = false;
+
+  shouldHideBloomTargetsOnFinalComposition = true;
+
+  writeDebug = process.env.NODE_ENV === "development";
 
   /**
    *
@@ -63,31 +212,6 @@ export default class Scene {
     this.stats = stats;
   }
 
-  calculateRatio() {
-    const gl = this.renderer.getContext();
-    const dpr = window.devicePixelRatio || 1;
-    const bsr =
-      //@ts-ignore
-      gl.webkitBackingStorePixelRatio ||
-      //@ts-ignore
-      gl.mozBackingStorePixelRatio ||
-      //@ts-ignore
-      gl.msBackingStorePixelRatio ||
-      //@ts-ignore
-      gl.oBackingStorePixelRatio ||
-      //@ts-ignore
-      gl.backingStorePixelRatio ||
-      1;
-
-    const ratio = dpr / bsr;
-
-    this.ratio = ratio;
-  }
-
-  burstIndex = 0;
-
-  firstCreate = true;
-
   /**
    *
    * @param {HTMLCanvasElement} canvas2D
@@ -95,13 +219,12 @@ export default class Scene {
    * @param {(canvas: HTMLCanvasElement) => void} onSceneCreated
    */
   initScene(canvas2D, canvas3D, onSceneCreated) {
+    console.groupCollapsed("Scene.initScene");
+    console.trace();
+    console.groupEnd();
     this.dispose();
 
     this.clock = new THREE.Clock();
-    let texture = new THREE.CanvasTexture(canvas2D);
-    // texture.wrapS = THREE.RepeatWrapping;
-    // texture.wrapT = THREE.RepeatWrapping;
-    this.fractalTexture = texture;
 
     let scene = new THREE.Scene();
     this.scene = scene;
@@ -127,41 +250,13 @@ export default class Scene {
     renderer.shadowMap.enabled = true;
     renderer.toneMapping = THREE.ReinhardToneMapping;
     this.renderer = renderer;
-    this.calculateRatio();
+    this._calculateRatio();
     renderer.setPixelRatio(this.ratio);
-
-    // this.orbitControls = new OrbitControls(camera, renderer.domElement);
-
-    // if (this.useOrbitControls) this.orbitControls.update();
 
     const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x0f0e0d, 0.02);
     scene.add(hemiLight);
 
-    // const bulbGeometry = new THREE.SphereGeometry(0.2, 16, 8);
-    // const bulbLight = new THREE.PointLight(0xffee88, 1, 100, 2);
-
-    // const bulbMat = new THREE.MeshStandardMaterial({
-    //   emissive: 0xffffee,
-    //   emissiveIntensity: 1,
-    //   color: 0x000000,
-    // });
-    // bulbLightMatRef.current = bulbMat;
-
     this.bulbLights = [];
-
-    // for(let i = -3; i < 4; i+=3) {
-    //   const pLight = new THREE.PointLight(0xffee88, 1, 100, 2);
-    //   // pLight.userData.isBloomTarget = true;
-    //   // pLight.layers.enable(BLOOM_SCENE);
-    //   pLight.position.set(i, 2, -5.5);
-    //   // pLight.add(new THREE.Mesh(bulbGeometry, bulbMat));
-    //   pLight.castShadow = true;
-    //   pLight.userData.originalX = pLight.position.x;
-    //   pLight.userData.originalY = pLight.position.y;
-    //   pLight.userData.originalZ = pLight.position.z;
-    //   scene.add(pLight);
-    //   this.bulbLights.push(pLight);
-    // }
 
     for (let i = -3; i < 4; i += 3) {
       const pLight = new THREE.PointLight(0xffffff, 1, 100, 2);
@@ -175,45 +270,6 @@ export default class Scene {
       this.bulbLights.push(pLight);
     }
 
-    // scene.add(new THREE.AmbientLight(0xffffff, 10)); // Add some ambient light
-
-    // var light = new THREE.DirectionalLight("white", 0.5);
-    // light.position.set(1, 1, 1);
-    // scene.add(light);
-    // lightRef.current = light;
-
-    // var globe = new THREE.Mesh(
-    //   new THREE.IcosahedronGeometry(2, 2),
-    //   new THREE.MeshStandardMaterial({
-    //     color: "dimgray",
-    //     flatShading: true,
-    //     metalness: 0.9,
-    //     roughness: 0.6,
-    //   })
-    // );
-    // globe.visible = false;
-    // scene.add(globe);
-
-    // var cosmos = new THREE.Mesh(
-    //   new THREE.IcosahedronGeometry(30, 5),
-    //   new THREE.MeshStandardMaterial({
-    //     color: "navy",
-    //     flatShading: true,
-    //     side: THREE.BackSide,
-    //     metalness: 0.8,
-    //     roughness: 0.3,
-    //   })
-    // );
-    // // cosmos.position.set(0, 0, 1);
-    // scene.add(cosmos);
-    // cosmosRef.current = cosmos;
-
-    // var cosmos2 = cosmos.clone();
-    // // cosmos2.position.set(0, 0, 1);
-    // cosmos2.rotation.y = 0.1;
-    // scene.add(cosmos2);
-    // cosmos2Ref.current = cosmos2;
-
     const floorMat = new THREE.MeshPhysicalMaterial({
       roughness: 0.8,
       color: "white",
@@ -224,40 +280,7 @@ export default class Scene {
       // bumpScale: 1,
     });
 
-    // const textureLoader = new THREE.TextureLoader();
-    // textureLoader.load(floorDiffuse, function (map) {
-    //   map.wrapS = THREE.RepeatWrapping;
-    //   map.wrapT = THREE.RepeatWrapping;
-    //   map.anisotropy = 4;
-    //   map.repeat.set(10, 24);
-    //   map.colorSpace = THREE.SRGBColorSpace;
-    //   floorMat.map = map;
-    //   floorMat.needsUpdate = true;
-    // });
-    // textureLoader.load(floorBump, function (map) {
-    //   map.wrapS = THREE.RepeatWrapping;
-    //   map.wrapT = THREE.RepeatWrapping;
-    //   map.anisotropy = 4;
-    //   map.repeat.set(10, 24);
-    //   floorMat.bumpMap = map;
-    //   floorMat.needsUpdate = true;
-    // });
-    // textureLoader.load(floorRoughness, function (map) {
-    //   map.wrapS = THREE.RepeatWrapping;
-    //   map.wrapT = THREE.RepeatWrapping;
-    //   map.anisotropy = 4;
-    //   map.repeat.set(10, 24);
-    //   floorMat.roughnessMap = map;
-    //   floorMat.needsUpdate = true;
-    // });
-
     const largePlaneGeo = new THREE.PlaneGeometry(20, 20);
-
-    // (0, 0, -10)
-    // const wallMesh = new THREE.Mesh(largePlaneGeo, floorMat);
-    // wallMesh.receiveShadow = true;
-    // wallMesh.position.setZ(-7.0);
-    // scene.add(wallMesh);
 
     // (0, -1, 0)
     const floorMesh = new THREE.Mesh(largePlaneGeo, floorMat);
@@ -265,8 +288,6 @@ export default class Scene {
     floorMesh.rotation.x = -Math.PI / 2.0;
     floorMesh.position.setY(-1.0);
     scene.add(floorMesh);
-
-    // point cloud
 
     this.bloomLayer = new THREE.Layers();
     this.bloomLayer.set(BLOOM_SCENE);
@@ -280,7 +301,6 @@ export default class Scene {
     });
     this.sceneObjectsMats = {};
 
-    // startTimeRef.current = Date.now();
     const particleSystem = this._createParticleSystem();
     this.pointGeom = particleSystem.geometry;
     this.pointMat = particleSystem.material;
@@ -288,7 +308,6 @@ export default class Scene {
     this.particles.name = "Particles";
     this.particles.position.set(0, 0, 10);
     this.particles.userData.isBloomTarget = true;
-    // this.particles.renderOrder = 0;
 
     const MAX_BURSTS = 5; // Maximum number of simultaneous bursts
     this.burstIndex = 0; // Current index for the next burst
@@ -300,160 +319,164 @@ export default class Scene {
       this.burstPositions[i] = new THREE.Vector3();
     }
 
-    // this.particles.layers.enable(BLOOM_SCENE);
-    // this.particles.layers.enable(NO_BLOOM_SCENE);
-
     scene.add(this.particles);
 
-    const uniforms = {
-      uFractalTexture: { value: texture },
-      uTime: { value: 0 },
-      uResolution: {
-        value: new THREE.Vector2(
-          window.innerWidth * this.ratio,
-          window.innerHeight * this.ratio
-        ),
-      },
-      uXDriftFactor: { value: this.uXDriftFactor },
-      uYDriftFactor: { value: this.uYDriftFactor },
-      uNoiseScale: { value: this.uNoiseScale },
-      uDistortion: { value: this.uDistortion },
-    };
+    this._createFractalMesh(canvas2D);
 
-    let material = new THREE.ShaderMaterial({
-      uniforms,
-      vertexShader: fractalShader.vertexShader,
-      fragmentShader: fractalShader.fragmentShader,
-      vertexColors: true,
-      glslVersion: THREE.GLSL3,
-      transparent: true,
-      blending: THREE.NormalBlending,
-    });
+    this._setupPostProccesing(renderer, scene, camera);
 
-    this.fractalMaterial = material;
-
-    let geometry = new THREE.PlaneGeometry(2, 2);
-
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = "Fractal";
-    mesh.position.set(0, 0, 11);
-    mesh.userData.isBloomTarget = true;
-
-    this.fractalMesh = mesh;
-    this._scaleFractal();
-    // mesh.renderOrder = 1;
-    mesh.layers.enable(BLOOM_SCENE);
-    // mesh.layers.enable(NO_BLOOM_SCENE);
-    scene.add(mesh);
-
-    this.clickPositionDebugCube = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, 0.1, 0.1),
-      new THREE.MeshBasicMaterial({ color: "blue" })
-    );
-
-    // scene.add(this.clickPositionDebugCube);
-
-    // const planeMesh = new THREE.Mesh(
-    //   geometry,
-    //   new THREE.MeshBasicMaterial({ color: "red" })
-    // );
-    // planeMesh.position.set(0, 0, 9); // i need this mesh to always cover the size of the viewport
-
-    // scene.add(planeMesh);
-
-    // mesh.renderOrder = 1;
-    // this.particles.renderOrder = 2;
-
-    const {
-      finalComposer,
-      bokehPass,
-      bloomPass,
-      renderTarget,
-      finalPass,
-      bloomComposer,
-    } = this._setupPostProccesing(renderer, scene, camera);
-    this.finalComposer = finalComposer;
-    this.finalPass = finalPass;
-    this.renderTarget = renderTarget;
-    this.bloomComposer = bloomComposer;
-    this.bloomPass = bloomPass;
-    this.bokehPass = bokehPass;
-
-    window.addEventListener("resize", this._onWindowResize.bind(this));
+    // window.addEventListener("resize", this._onWindowResize.bind(this));
     window.addEventListener("click", this._onClick.bind(this));
-    window.addEventListener("keypress", this._onKeyPress.bind(this));
     window.addEventListener("keydown", this._onKeyDown.bind(this));
     window.addEventListener("keyup", this._onKeyUp.bind(this));
+
+    this._createDebugInfoContainer();
+
     onSceneCreated(canvas3D, renderer, scene, camera);
     this.clock.start();
-    this._animate();
+    this.sceneInitted = true;
+    this._render();
   }
 
-  setCanvas(canvas2D,) {
+  sceneInitted = false;
 
-    // this.renderer.setSize(window.innerWidth, window.innerHeight);
-    // this.calculateRatio();
-    // this.renderer.setPixelRatio(this.ratio);
+  setCanvas(canvas2D) {
+    console.groupCollapsed("Scene.setCanvas");
+    console.trace();
+    console.groupEnd();
+    this.canvas2D = canvas2D;
   }
 
   /**
+   * Description placeholder
    *
-   * @param {number} xDriftFactor
-   * @param {number} yDriftFactor
-   * @param {number} noiseScale
-   * @param {number} distortion
-   * @param {boolean} shouldRender
-   * @param {boolean} usePostProcessing
+   * @param {{ xDriftFactor: number;
+   * yDriftFactor: number;
+   * noiseScale: number;
+   * distortion: number;
+   * shouldRender: boolean;
+   * usePostProcessing: boolean;
+   * canBurstInteract: boolean;
+   * shouldBlur: boolean;
+   * introComplete: boolean;
+   * onFireWorkIntroComplete: () => void;
+   * redraw: () => void;
+   * firstFullRenderComplete: boolean;
+   * onSetXDriftFactor: (xDriftFactor: number) => void;
+   * onSetYDriftFactor: (yDriftFactor: number) => void;
+   * onSetNoiseScale: (noiseScale: number) => void;
+   * onSetDistortion: (distortion: number) => void;
+   * drawCompleted: boolean;
+   * isDrawing: boolean;
+   * }} params
+   * @returns
    */
-  setParams({
-    xDriftFactor,
-    yDriftFactor,
-    noiseScale,
-    distortion,
-    shouldRender,
-    usePostProcessing,
-    canBurstInteract,
-    shouldBlur,
-    introComplete,
-    onFireWorkIntroComplete,
-    redraw,
-  }) {
-    this.uXDriftFactor = xDriftFactor;
-    this.uYDriftFactor = yDriftFactor;
-    this.uNoiseScale = noiseScale;
-    this.uDistortion = distortion;
+  setParams(params) {
+    if (!this.sceneInitted) return;
+
+    const {
+      xDriftFactor,
+      yDriftFactor,
+      noiseScale,
+      distortion,
+      shouldRender,
+      usePostProcessing,
+      canBurstInteract,
+      shouldBlur,
+      introComplete,
+      onFireWorkIntroComplete,
+      redraw,
+      firstFullRenderComplete,
+      onSetXDriftFactor,
+      onSetYDriftFactor,
+      onSetNoiseScale,
+      onSetDistortion,
+      drawCompleted,
+      isDrawing,
+    } = params;
+    console.groupCollapsed("Scene.setParams");
+    console.log("params", params);
+    console.trace();
+    console.groupEnd();
+    if (!firstFullRenderComplete) {
+      this.fractalUniformTransitionState.noiseScale.original = noiseScale;
+      this.fractalUniformTransitionState.distortion.original = distortion;
+      this.fractalUniformTransitionState.xDriftFactor.original = xDriftFactor;
+      this.fractalUniformTransitionState.yDriftFactor.original = yDriftFactor;
+    }
+
+    this.fractalUniformTransitionState.distortion.original = distortion;
+
+    this.fractalUniformTransitionState.noiseScale.start =
+      this.fractalUniformTransitionState.noiseScale.current;
+    // this.fractalUniformTransitionState.distortion.start =
+    //   this.fractalUniformTransitionState.distortion.current;
+    this.fractalUniformTransitionState.xDriftFactor.start =
+      this.fractalUniformTransitionState.xDriftFactor.current;
+    this.fractalUniformTransitionState.yDriftFactor.start =
+      this.fractalUniformTransitionState.yDriftFactor.current;
+
+    this.fractalUniformTransitionState.noiseScale.current = noiseScale;
+    // this.fractalUniformTransitionState.distortion.current = distortion;
+    // this.fractalUniformTransitionState.xDriftFactor.current = xDriftFactor;
+    // this.fractalUniformTransitionState.yDriftFactor.current = yDriftFactor;
+
+    this.fractalUniformTransitionState.noiseScale.target = noiseScale;
+    // this.fractalUniformTransitionState.distortion.target = distortion;
+    this.fractalUniformTransitionState.xDriftFactor.target = xDriftFactor;
+    this.fractalUniformTransitionState.yDriftFactor.target = yDriftFactor;
+
     this.shouldRender = shouldRender;
     this.shouldUsePostProcessing = usePostProcessing;
     this.canBurstInteract = canBurstInteract;
     this.shouldBlur = shouldBlur;
     this.onFireWorkIntroComplete = onFireWorkIntroComplete;
+    this.introComplete = introComplete;
+    this.redraw = redraw;
 
-    if (introComplete && this.firstCreate) {
-      this.firstCreate = false;
+    this.firstRenderCompleteState.firstFullRenderComplete =
+      firstFullRenderComplete;
 
+    this.onSetXDriftFactor = onSetXDriftFactor;
+    this.onSetYDriftFactor = onSetYDriftFactor;
+    this.onSetNoiseScale = onSetNoiseScale;
+    this.onSetDistortion = onSetDistortion;
+    this.drawCompleted = drawCompleted;
+
+    if (introComplete && !this.didRedraw) {
+      console.log("redrawing");
+      this._addParticles(250, new THREE.Vector3(0, 0.4, 0));
+      this._addParticles(150, new THREE.Vector3(-0.35, 0.3, 0));
+      this._addParticles(150, new THREE.Vector3(0.35, 0.3, 0));
+      this._addParticles(75, new THREE.Vector3(-0.5, 0.15, 0));
+      this._addParticles(75, new THREE.Vector3(0.5, 0.15, 0));
       window.setTimeout(() => {
-        this._addParticles(250, new THREE.Vector3(0, 0.4, 0));
-        window.setTimeout(() => {
-          this._addParticles(150, new THREE.Vector3(-0.35, 0.3, 0));
-          this._addParticles(150, new THREE.Vector3(0.35, 0.3, 0));
-          this._addParticles(150, new THREE.Vector3(-0.5, 0.15, 0));
-          this._addParticles(150, new THREE.Vector3(0.5, 0.15, 0));
-
-          window.setTimeout(() => {
-            if (redraw) redraw();
-            this.canDrawFractal = true;
-          }, 4000);
-        }, 0);
-      }, 0);
+        this.didRedraw = true;
+        redraw();
+      }, 1000);
+    } else if (introComplete && this.didRedraw && isDrawing) {
+      this.canDrawFractal = true;
     }
   }
 
+  didRedraw = false;
+  canDrawFractal = false;
+
   dispose() {
-    this.renderer?.dispose();
-    this.bloomComposer?.dispose();
-    this.finalComposer?.dispose();
-    this.fractalTexture?.dispose();
-    this.fractalMaterial?.dispose();
+    console.groupCollapsed("Scene.dispose");
+    console.trace();
+    console.groupEnd();
+
+    this.sceneInitted = false;
+
+    // window.clearTimeout(this.beginDrawTimeout);
+    window.clearTimeout(this.cleanTimeout);
+    window.clearTimeout(this.resizeTimeout);
+    cancelAnimationFrame(this.animationFrame);
+
+    this._disposeDebugInfoContainer();
+    this._disposePostProcessing();
+    this._disposeFractalMesh();
 
     this.ignoreBloomPassMat?.dispose();
 
@@ -465,64 +488,115 @@ export default class Scene {
         this.sceneObjectsMats[key].dispose();
       }
     }
-    this.delta = 0;
+
+    if (this.pointMat) this.pointMat.dispose();
+    if (this.pointGeom) this.pointGeom.dispose();
+    if (this.particles) this.particles.geometry.dispose();
+
+    if (this.scene) {
+      for (const obj of this.scene.children) {
+        if (obj instanceof THREE.Mesh) {
+          this.scene.remove(obj);
+          obj.geometry.dispose();
+          obj.material.dispose();
+        }
+      }
+    }
+
+    if (this.bulbLights) {
+      for (const light of this.bulbLights) {
+        light.dispose();
+      }
+    }
+
+    this.renderer?.clear();
+    this.renderer?.dispose();
+    // this.scene?.dispose();
+    // this.camera?.dispose();
+
+    // this.renderer = null;
+    // this.scene = null;
+    // this.camera = null;
+
     this.burstIndex = 0;
     this.keysDown = {};
-    window.removeEventListener("resize", this._onWindowResize);
+
+    // shouldRender = true;
+    // shouldUsePostProcessing = true;
+
+    // cameraStartPosition = new THREE.Vector3(0, 0, 13);
+    // cameraEndPosition = new THREE.Vector3(0, 0, 12);
+    // canBurstInteract = false;
+    // shouldBlur = false;
+
+    this.burstIndex = 0;
+
+    // this.firstCreate = true;
+
+    this.firstRenderCompleteState = INITIAL_FIRST_RENDER_COMPLETE_STATE;
+
+    // this.fractalUniformTransitionState =
+    //   INITIAL_FRACTAL_UNIFORM_TRANSITION_STATE;
+
+    this.drawCompleted = false;
+
+    this.totalTime = 0;
+    this.flowTime = 0;
+    // resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+
+    // bokehPassBlurred = false;
+
+    this.blurEffectState = INITIAL_BLUR_EFFECT_STATE;
+
+    this.bloomState = INITIAL_BLOOM_STATE;
+
+    // lastRealWorldTime = performance.now();
+
+    this._vec = new THREE.Vector3();
+    this._worldPos = new THREE.Vector3();
+    this._localPos = new THREE.Vector3();
+    this._mouseCast = new THREE.Vector2();
+    this._raycaster = new THREE.Raycaster();
+
+    this.keysDown = {};
+    this.needsKeyReset = false;
+
+    this.shouldHideBloomTargetsOnFinalComposition = true;
+
+    // this.overrideBloomBehavior = false;
+
+    this.lastRealWorldTime = performance.now();
     window.removeEventListener("click", this._onClick);
-    window.removeEventListener("keypress", this._onKeyPress);
     window.removeEventListener("keydown", this._onKeyDown);
     window.removeEventListener("keyup", this._onKeyUp);
-    cancelAnimationFrame(this.animationFrame);
   }
 
-  _scaleFractal() {
-    // Assuming the fractal mesh is a PlaneGeometry aligned with the XY plane
-    // and facing the camera, we need to update its scale to cover the viewport.
-    // The scale will be based on the camera's view frustum and the aspect ratio.
-    const distance = this.camera.position.z - this.fractalMesh.position.z;
-    const vFov = (this.camera.fov * Math.PI) / 180; // convert vertical fov to radians
-    const planeHeightAtDistance = 2 * Math.tan(vFov / 2) * distance;
-    const planeWidthAtDistance = planeHeightAtDistance * this.camera.aspect;
-    // Scale the fractal mesh to fit the screen
-    this.fractalMesh.scale.x = planeWidthAtDistance;
-    this.fractalMesh.scale.y = planeHeightAtDistance;
+  _getRealDelta() {
+    const currentRealWorldTime = performance.now();
+    const delta = (currentRealWorldTime - this.lastRealWorldTime) / 1000;
+    this.lastRealWorldTime = currentRealWorldTime;
+    return delta;
   }
 
-  delta = 0;
-  _animate(time) {
+  _render(time) {
     this.stats.begin();
 
-    if (this.shouldRender) {
-      // const elapsedTime = clockRef.current.getElapsedTime();
+    const realWorldDeltaSeconds = this._getRealDelta();
 
+    if (this.shouldRender) {
       const deltaTime = this.clock.getDelta();
-      this.delta += deltaTime;
-      // const msTime = this.clock.getElapsedTime();
 
       time = time / 1000;
 
-      // if (this.camera) {
-      //   let lerpFactor = elapsedTime / 15;
-      //   if (lerpFactor < 1.0) {
-      //     this.camera.position.lerpVectors(
-      //       this.cameraStartPosition,
-      //       this.cameraEndPosition,
-      //       lerpFactor
-      //     );
-      //   } else {
-      //     this.camera.position.copy(this.cameraEndPosition);
-      //   }
-      // }
+      this.flowTime = time;
 
-      // if (cosmosRef.current && cosmos2Ref.current) {
-      //   const t = time / 10000;
+      this._calculateRatio();
+      this.resolution.set(
+        window.innerWidth * this.ratio,
+        window.innerHeight * this.ratio
+      );
 
-      //   cosmosRef.current.rotation.x = 2 * t;
-      //   cosmosRef.current.rotation.y = -2 * t;
-      //   cosmos2Ref.current.rotation.x = -1.5 * t;
-      //   cosmos2Ref.current.rotation.y = 1.5 * t;
-      // }
+      if (this.writeDebug) this.infoContainer.innerHTML = "";
 
       if (this.light && this.camera) {
         this.light.position.copy(this.camera.position);
@@ -530,15 +604,16 @@ export default class Scene {
 
       if (this.particles) {
         this.particles.material.uniforms.uTime.value = time;
+        this.particles.material.uniforms.uHasBloom.value = this.bloomLayer.test(
+          this.particles.layers
+        )
+          ? 1.0
+          : 0;
 
-        // if (this.delta > 5) {
         this.particles.material.uniforms.uElapsedTime.value += deltaTime;
-        // }
 
-        // this.particles.material.uniforms.uBurstTime.value += deltaTime;
         this.particles.material.uniforms.cameraPosition.value =
           this.camera.position.clone();
-        // pointsRef.current.material.uniforms.cameraPosition.value = this.camera.position.clone();
 
         for (let i = 0; i < 5; i++) {
           this.burstTimes[i] += deltaTime;
@@ -546,28 +621,125 @@ export default class Scene {
 
         this.particles.material.uniforms.uBurstTimes.value = this.burstTimes;
 
-        // console.log('this.particles.material.uniforms.uBurstTimes.value', this.particles.material.uniforms.uBurstTimes.value);
-        // console.log('this.particles.material.uniforms.uClickPositions.value', this.particles.material.uniforms.uClickPositions.value);
-
         this._updateParticles(deltaTime);
       }
 
       if (this.canDrawFractal) {
         if (this.fractalTexture) this.fractalTexture.needsUpdate = true;
 
+        this._updateFractalMaterialUniforms(realWorldDeltaSeconds);
+
         if (this.fractalMaterial) {
-          this.fractalMaterial.uniforms.uTime.value = time;
-          this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
-            window.innerWidth * this.ratio,
-            window.innerHeight * this.ratio
-          );
+          this.fractalMaterial.uniforms.uTime.value = this.flowTime;
+          this.fractalMaterial.uniforms.uResolution.value = this.resolution;
           this.fractalMaterial.uniforms.uXDriftFactor.value =
-            this.uXDriftFactor;
+            this.fractalUniformTransitionState.xDriftFactor.current;
           this.fractalMaterial.uniforms.uYDriftFactor.value =
-            this.uYDriftFactor;
-          this.fractalMaterial.uniforms.uNoiseScale.value = this.uNoiseScale;
-          this.fractalMaterial.uniforms.uDistortion.value = this.uDistortion;
+            this.fractalUniformTransitionState.yDriftFactor.current;
+          this.fractalMaterial.uniforms.uNoiseScale.value =
+            this.fractalUniformTransitionState.noiseScale.current;
+
+          // this.fractalMaterial.uniforms.uDisturbedNoiseScale.value =
+          //   this.fractalUniformTransitionState.noiseScale.current;
+
+          // this.fractalMaterial.uniforms.uDisturbedNoiseScaleFactor.value =
+          //   this.fractalUniformTransitionState.noiseScale.factor;
+
+          this.fractalMaterial.uniforms.uDistortion.value =
+            this.fractalUniformTransitionState.distortion.original;
+
+          this.fractalMaterial.uniforms.uDisturbedDistortion.value =
+            this.fractalUniformTransitionState.distortion.current;
+
+          this.fractalMaterial.uniforms.uDisturbedDistortionFactor.value =
+            this.fractalUniformTransitionState.distortion.factor;
+
           this.fractalMaterial.needsUpdate = true;
+
+          // let debugStr = "Fractal Noise Distortion<br>";
+          // for (const property in this.fractalUniformTransitionState) {
+          //   const state = this.fractalUniformTransitionState[property];
+
+          //   if (
+          //     state.currentTime < state.duration &&
+          //     state.current !== state.target
+          //   )
+          //     state.currentTime += realWorldDeltaSeconds;
+
+          //   const timeProgress = Math.min(
+          //     state.currentTime / state.duration,
+          //     1.0
+          //   );
+
+          //   const easedProgress = applyEasing(timeProgress, state.EASE_TYPE);
+
+          //   // Apply epsilon to handle floating-point imprecision
+          //   const epsilon = 1e-6;
+          //   const correctedEasedProgress =
+          //     Math.abs(easedProgress - 1) < epsilon ? 1 : easedProgress;
+
+          //   state.current =
+          //     state.start +
+          //     (state.target - state.start) * correctedEasedProgress;
+
+          //   if (property === "noiseScale") {
+
+          //     if(state.state === "disturbed")
+          //     state.factor = THREE.MathUtils.lerp(
+          //       state.factor,
+          //       // !state.hitDisturbedPeak ? 1 : 0,
+          //       0,
+          //       0.01
+          //     );
+
+          //     // if (!state.hitDisturbedPeak && state.factor >= 0.99) {
+          //     //   state.hitDisturbedPeak = true;
+          //     // }
+
+          //     if (
+          //       // state.hitDisturbedPeak &&
+          //       state.current * state.factor <= 1e-1
+          //     ) {
+          //       state.current = state.target;
+          //     }
+          //   }
+
+          //   if (state.current === state.target) {
+          //     state.state = "idle";
+
+          //     // if (property === "noiseScale") {
+          //     //   state.hitDisturbedPeak = false;
+          //     // }
+
+          //     // if (state.current !== state.original) {
+          //     //   state.target = state.original;
+          //     //   state.currentTime = 0;
+          //     //   state.state = "disturbed"
+          //     // }
+          //   }
+
+          //   // Debugging output
+          //   if (this.writeDebug) {
+          //     debugStr += `${property}: ${state.current}<br>
+          //       Target: ${state.target}<br>
+          //       Time: ${state.currentTime}<br>
+          //       Duration: ${state.duration}<br>
+          //       Progress: ${timeProgress}<br>
+          //       Corrected Eased Progress: ${correctedEasedProgress}<br>
+          //       State: ${state.state}<br>`;
+
+          //     if (property === "noiseScale") {
+          //       debugStr += `Factor: ${state.factor}<br>
+          //         Noise Scale * Factor: ${state.current * state.factor}<br>
+          //         Hit Disturbed Peak: ${state.hitDisturbedPeak}<br>
+          //         `;
+          //     }
+          //   }
+          // }
+
+          // if (this.writeDebug) this.infoContainer.innerHTML = debugStr;
+
+          // console.log("this.uNoiseScale", this.uNoiseScale);
         }
       }
 
@@ -618,9 +790,6 @@ export default class Scene {
         // this.bulbLight.position.z = Math.sin(timeRef.current * 0.5) + 4;
       }
 
-      if (this.orbitControls && this.useOrbitControls)
-        this.orbitControls.update();
-
       if (
         !this.shouldUsePostProcessing &&
         this.renderer &&
@@ -630,17 +799,117 @@ export default class Scene {
         this.renderer.render(this.scene, this.camera);
       }
 
-      this._postProcessing();
-
-      this.stats.end();
-
-      this.animationFrame = requestAnimationFrame(this._animate.bind(this));
+      this._renderPostProcessing(realWorldDeltaSeconds);
     }
+
+    this.stats.end();
+    this.animationFrame = requestAnimationFrame(this._render.bind(this));
   }
 
-  bokehPassBlurred = false;
+  _updateFractalMaterialUniforms(realWorldDeltaSeconds) {
+    return;
+    
+    let debugStr = "Fractal Noise Distortion<br>";
 
-  _postProcessing() {
+    for (const prop in this.fractalUniformTransitionState) {
+      if (prop === "noiseScale") continue;
+
+      this.fractalUniformTransitionState[prop].target = this.shouldBlur
+        ? this.fractalUniformTransitionState[prop].BLURRED_TARGET
+        : this.fractalUniformTransitionState[prop].UNBLURRED_TARGET;
+
+      let duration = this.shouldBlur
+        ? this.fractalUniformTransitionState[prop].blurredDuration
+        : this.fractalUniformTransitionState[prop].unblurredDuration;
+
+      if (
+        this.fractalUniformTransitionState[prop].target !==
+        this.fractalUniformTransitionState[prop].previousTarget
+      ) {
+        this.fractalUniformTransitionState[prop].currentTime = 0;
+        this.fractalUniformTransitionState[prop].start =
+          this.fractalUniformTransitionState[prop].current;
+
+        if (prop === "distortion") {
+          this.fractalUniformTransitionState[prop].start =
+          this.fractalUniformTransitionState[prop].current * this.fractalUniformTransitionState[prop].factor;
+          this.fractalUniformTransitionState[prop].factor = this.shouldBlur
+            ? 1
+            : 0;
+        }
+      }
+
+      this.fractalUniformTransitionState[prop].previousTarget =
+        this.fractalUniformTransitionState[prop].target;
+
+      if (
+        this.fractalUniformTransitionState[prop].currentTime < duration &&
+        this.fractalUniformTransitionState[prop].current !==
+          this.fractalUniformTransitionState[prop].target
+      )
+        this.fractalUniformTransitionState[prop].currentTime +=
+          realWorldDeltaSeconds;
+
+      // Ensure timeProgress doesn't exceed 1.0
+      let timeProgress = Math.min(
+        this.fractalUniformTransitionState[prop].currentTime / duration,
+        1.0
+      );
+
+      if (isNaN(timeProgress)) timeProgress = 1;
+
+      let easedProgress = applyEasing(
+        timeProgress,
+        this.fractalUniformTransitionState[prop].EASE_TYPE
+      );
+
+      // Apply epsilon to handle floating-point imprecision
+      const epsilon = 1e-6;
+      let correctedEasedProgress =
+        Math.abs(easedProgress - 1) < epsilon ? 1 : easedProgress;
+
+      this.fractalUniformTransitionState[prop].current =
+        this.fractalUniformTransitionState[prop].start +
+        (this.fractalUniformTransitionState[prop].target -
+          this.fractalUniformTransitionState[prop].start) *
+          correctedEasedProgress;
+
+      if (prop === "distortion") {
+        this.fractalUniformTransitionState[prop].factor = THREE.MathUtils.lerp(
+          this.fractalUniformTransitionState[prop].factor,
+          this.shouldBlur ? 0 : 1,
+          0.01
+        );
+      }
+
+      if (this.writeDebug) {
+        debugStr += `${prop}: ${this.fractalUniformTransitionState[prop].current}<br>
+        Target: ${this.fractalUniformTransitionState[prop].target}<br>
+        Time: ${this.fractalUniformTransitionState[prop].currentTime}<br>
+        Progress: ${timeProgress}<br>
+        Corrected Eased Progress: ${correctedEasedProgress}<br>
+        BLURRED_TARGET: ${this.fractalUniformTransitionState[prop].BLURRED_TARGET}<br>
+        UNBLURRED_TARGET: ${this.fractalUniformTransitionState[prop].UNBLURRED_TARGET}<br>
+        `;
+
+        if (prop === "distortion") {
+          debugStr += `Factor: ${this.fractalUniformTransitionState[prop].factor}<br>`;
+        }
+      }
+    }
+
+    if (this.writeDebug) this.infoContainer.innerHTML = debugStr;
+  }
+
+  _renderPostProcessing(realWorldDeltaSeconds) {
+    if (!this.shouldBlur) {
+      this.blurEffectState.flashClimax = false;
+      this.blurEffectState.flashFinish = false;
+      this.blurEffectState.flashTime = 0;
+    }
+
+    let debugStr = "";
+
     if (
       this.shouldUsePostProcessing &&
       this.scene &&
@@ -649,15 +918,46 @@ export default class Scene {
       this.sceneObjectsMats &&
       this.finalComposer
     ) {
-      if (this.bokehPass) {
+      if (this.bloomPass) {
+        this.bloomPass.setSize(this.resolution.x, this.resolution.y);
+        this.bloomPass.resolution.set(this.resolution.x, this.resolution.y);
+      }
+
+      if (this.fractalMesh && !this.bloomState.overrideBloomBehavior) {
+        if (this.shouldBlur && this.blurEffectState.flashClimax) {
+          // disable bloom
+          if (this.bloomLayer.test(this.fractalMesh.layers) === true) {
+            this._toggleFractalBloom();
+          }
+        } else if (!this.shouldBlur) {
+          // enable bloom
+          if (this.bloomLayer.test(this.fractalMesh.layers) === false) {
+            this._toggleFractalBloom();
+          }
+        }
+      }
+
+      if (this.particles && !this.bloomState.overrideBloomBehavior) {
+        if (this.shouldBlur && this.blurEffectState.flashClimax) {
+          if (this.bloomLayer.test(this.particles.layers) === false) {
+            this._toggleParticleBloom();
+          }
+        } else if (!this.shouldBlur) {
+          if (this.bloomLayer.test(this.particles.layers) === true) {
+            this._toggleParticleBloom();
+          }
+        }
+      }
+
+      if (this.bokehPass && this.firstRenderCompleteState.totallyComplete) {
         // Update the focus in the bokehPass with the new focus value
         this.bokehPass.uniforms.focus.value = THREE.MathUtils.lerp(
           this.bokehPass.uniforms.focus.value,
-          this.shouldBlur ? 100.0 : 0.0,
+          this.shouldBlur && this.blurEffectState.flashClimax ? 90.0 : 0.0,
           0.02
         );
 
-        if (this.bokehPass.uniforms.focus.value >= 99.9) {
+        if (this.bokehPass.uniforms.focus.value >= 90) {
           this.bokehPassBlurred = true;
         } else {
           this.bokehPassBlurred = false;
@@ -665,39 +965,217 @@ export default class Scene {
       }
 
       if (this.bloomPass) {
-        this.bloomPass.strength = THREE.MathUtils.lerp(
-          this.bloomPass.strength,
-          this.shouldBlur ? 0.45 : 0.35,
-          0.009
+        if (this.shouldBlur && this.canDrawFractal)
+          this.bloomState.strengthIntroDone = true;
+
+        this.bloomState.targetStrength = this.shouldBlur
+          ? this.bloomState.BLURRED_STRENGTH
+          : this.drawCompleted || this.bloomState.strengthIntroDone
+          ? this.bloomState.UNBLURRED_STRENGTH
+          : 0;
+
+        if (
+          this.bloomState.targetStrength !==
+          this.bloomState.previousTargetStrength
+        ) {
+          this.bloomState.startStrength = this.bloomPass.strength;
+
+          this.bloomState.currentTransitionTime = 0;
+
+          this.bloomState.currentTransitionDuration = this.shouldBlur
+            ? this.bloomState.BLURRED_TRANSITION_DURATION
+            : this.bloomState.strengthIntroDone
+            ? this.bloomState.UNBLURRED_TRANSITION_DURATION
+            : this.bloomState.INTRO_TRANSITION_DURATION;
+
+          this.bloomState.currentStrengthTransitionEasing = this.shouldBlur
+            ? this.bloomState.BLURRED_TARGET_STRENGTH_TRANSITION_EASING
+            : this.bloomState.strengthIntroDone
+            ? this.bloomState.UNBLURRED_TARGET_STRENGTH_TRANSITION_EASING
+            : this.bloomState.INTRO_TARGET_STRENGTH_TRANSITION_EASING;
+
+          this.bloomState.currentMaxStrengthThreshold = this.shouldBlur
+            ? this.bloomState.BLURRED_MAX_STRENGTH_THRESHOLD
+            : this.bloomState.UNBLURRED_MAX_STRENGTH_THRESHOLD;
+
+          console.groupCollapsed("Bloom Transition");
+          console.log(
+            "this.bloomState.targetStrength",
+            this.bloomState.targetStrength
+          );
+          console.log(
+            "this.bloomState.previousTargetStrength",
+            this.bloomState.previousTargetStrength
+          );
+
+          console.log(
+            "this.bloomState.currentTransitionTime",
+            this.bloomState.currentTransitionTime
+          );
+          console.log(
+            "this.bloomState.currentTransitionDuration",
+            this.bloomState.currentTransitionDuration
+          );
+          console.log(
+            "this.bloomState.currentStrengthTransitionEasing",
+            this.bloomState.currentStrengthTransitionEasing
+          );
+          console.log(
+            "this.bloomState.currentMaxStrengthThreshold",
+            this.bloomState.currentMaxStrengthThreshold
+          );
+
+          console.groupEnd();
+        }
+
+        this.bloomState.previousTargetStrength = this.bloomState.targetStrength;
+
+        if (
+          this.bloomState.currentTransitionTime <
+          this.bloomState.currentTransitionDuration
+        )
+          this.bloomState.currentTransitionTime += realWorldDeltaSeconds;
+
+        // Ensure timeProgress doesn't exceed 1.0
+        let timeProgress = Math.min(
+          this.bloomState.currentTransitionTime /
+            this.bloomState.currentTransitionDuration,
+          1.0
         );
+
+        if (isNaN(timeProgress)) timeProgress = 1;
+
+        const easedProgress = applyEasing(
+          timeProgress,
+          this.bloomState.currentStrengthTransitionEasing,
+          this.bloomState.currentMaxStrengthThreshold,
+          0,
+          10.70158
+        );
+
+        // Apply epsilon to handle floating-point imprecision
+        const epsilon = 1e-6;
+        const correctedEasedProgress =
+          Math.abs(easedProgress - 1) < epsilon ? 1 : easedProgress;
+
+        this.bloomState.currentStrength = this.bloomState.strengthIntroDone
+          ? this.bloomState.startStrength +
+            (this.bloomState.targetStrength - this.bloomState.startStrength) *
+              correctedEasedProgress
+          : this.bloomState.targetStrength * correctedEasedProgress;
+
+        this.bloomPass.strength = this.bloomState.currentStrength;
+
+        if (
+          this.bloomPass.strength >= this.bloomState.UNBLURRED_STRENGTH &&
+          timeProgress >= 1.0
+        )
+          this.bloomState.strengthIntroDone = true;
+
+        this.bloomState.targetRadius = this.bloomState.overrideBloomBehavior
+          ? this.bloomState.controlledRadius
+          : this.shouldBlur
+          ? this.bloomState.BLURRED_RADIUS
+          : this.bloomState.UNBLURRED_RADIUS;
+
+        if (!this.bloomState.overrideBloomBehavior) {
+          this.bloomState.controlledRadius = this.bloomState.targetRadius;
+        }
 
         this.bloomPass.radius = THREE.MathUtils.lerp(
           this.bloomPass.radius,
-          this.shouldBlur ? 2.5 : 0.5,
+          this.shouldBlur && this.blurEffectState.flashClimax ? 1.5 : 0.1,
           0.009
         );
 
-        // this.bloomPass.threshold = THREE.MathUtils.lerp(
-        //   this.bloomPass.threshold,
-        //   this.shouldBlur && this.bokehPassBlurred ? 1 : 0,
-        //   0.009
-        // );
+        if (this.writeDebug) {
+          debugStr += `<h4>Bloom State</h4>
+        Override Bloom Behavior: ${this.bloomState.overrideBloomBehavior}<br/>
+        Fractal Has Bloom: ${this.bloomLayer.test(this.fractalMesh.layers)}<br/>
+        Particles Have Bloom: ${this.bloomLayer.test(
+          this.particles.layers
+        )}<br/>
+        Current Bloom Strength: ${this.bloomPass.strength}<br/>
+        Start Bloom Strength: ${this.bloomState.startStrength}<br/>
+        Target Strength: ${this.bloomState.targetStrength}<br/>
+        Previous Target Strength: ${this.bloomState.previousTargetStrength}<br/>
+        Current Transition Time: ${this.bloomState.currentTransitionTime}<br/>
+        Current Transition Duration: ${
+          this.bloomState.currentTransitionDuration
+        }<br/>
+        Current Strength Transition Easing: ${
+          this.bloomState.currentStrengthTransitionEasing
+        }<br/>
+        Current Max Strength Threshold: ${
+          this.bloomState.currentMaxStrengthThreshold
+        }<br/>
+        Time Progress: ${timeProgress}<br/>
+        Eased Progress: ${easedProgress}<br/>
+        Strength Intro Done: ${this.bloomState.strengthIntroDone}<br/>
+        <br/>
+        Bloom Radius: ${this.bloomPass.radius}<br/>
+        `;
+
+          this.infoContainer.innerHTML =
+            this.infoContainer.innerHTML == ""
+              ? debugStr
+              : this.infoContainer.innerHTML + "<br/>" + debugStr;
+        }
       }
 
-      // 1. Render the scene to the render target (base scene)
-      // this.renderer.setRenderTarget(this.renderTarget); // Set render target
-      // this.renderer.clear();
+      if (this.vignettePass && this.firstRenderCompleteState.totallyComplete) {
+        this.vignettePass.uniforms.vignetteStrength.value =
+          THREE.MathUtils.lerp(
+            this.vignettePass.uniforms.vignetteStrength.value,
+            this.shouldBlur && this.blurEffectState.flashClimax ? 1.25 : 0,
+            0.009
+          );
+      }
 
-      // Traverse the scene and replace materials for objects that should not bloom
+      if (this.flashPass && this.firstRenderCompleteState.totallyComplete) {
+        if (this.shouldBlur) {
+          this.blurEffectState.flashClimax = true;
+
+          // Increment the flash time
+          this.blurEffectState.flashTime += realWorldDeltaSeconds;
+
+          // Ensure timeProgress doesn't exceed 1.0
+          const timeProgress = Math.min(
+            this.blurEffectState.flashTime / this.blurEffectState.flashDuration,
+            1.0
+          );
+
+          // Calculate the alpha based on time (from 1 to 0 over 1 second)
+          if (
+            this.blurEffectState.flashTime <= this.blurEffectState.flashDuration
+          ) {
+            // Apply quadratic ease-in for smoother start
+            const easedProgress = 1 - (1 - timeProgress) * (1 - timeProgress);
+
+            // Set the alpha to smoothly ease in from 1 to 0
+            this.flashPass.uniforms.flashAlpha.value = 1 - easedProgress;
+          } else {
+            this.flashPass.uniforms.flashAlpha.value = 0.0; // After 1 second, alpha is 0
+          }
+        } else {
+          // Reset flash time and alpha when shouldBlur is false
+          this.blurEffectState.flashTime = 0;
+          this.flashPass.uniforms.flashAlpha.value = 0.0;
+        }
+      }
+
+      let bloomObjects = "";
+
       this.scene.traverse((obj) => {
         if (this.bloomLayer.test(obj.layers) === false) {
           this.sceneObjectsMats[obj.uuid] = obj.material;
           obj.material = this.ignoreBloomPassMat; // Use material that ignores bloom
+        } else {
+          bloomObjects += obj.name + "\n";
         }
       });
 
-      // Render the base scene
-      // this.renderer.render(this.scene, this.camera);
+      // this.infoContainer.innerHTML = "Bloom Objects:\n" + bloomObjects;
 
       // 2. Render the bloom pass (for objects in the bloom layer)
       this.bloomComposer.render();
@@ -707,21 +1185,31 @@ export default class Scene {
         if (this.sceneObjectsMats[obj.uuid]) {
           obj.material = this.sceneObjectsMats[obj.uuid]; // Restore original material
           delete this.sceneObjectsMats[obj.uuid];
+        } else {
+          if (this.shouldHideBloomTargetsOnFinalComposition) {
+            this.sceneObjectsMats[obj.uuid] = obj.material;
+            obj.material = this.ignoreBloomPassMat; // bloom object ignored in normal render
+          }
         }
       });
 
-      // 3. Set the base texture and bloom texture for the final pass
-      // this.finalPass.uniforms.baseTexture.value = this.renderTarget.texture;
-      // this.finalPass.uniforms.bloomTexture.value =
-      //   this.bloomComposer.renderTarget2.texture;
-      // this.finalPass.uniforms.baseTexture.needsUpdate = true;
-      // this.finalPass.uniforms.bloomTexture.needsUpdate = true;
-      // this.finalPass.needsSwap = true;
-
-      // 3. Render final composer (handles both bloom and base)
       this.finalComposer.render();
-      // this.renderer.setRenderTarget(null); // Reset render target
-      // this.finalComposer.render();
+
+      if (this.shouldHideBloomTargetsOnFinalComposition) {
+        this.scene.traverse((obj) => {
+          if (this.sceneObjectsMats[obj.uuid]) {
+            obj.material = this.sceneObjectsMats[obj.uuid]; // Restore original material
+            delete this.sceneObjectsMats[obj.uuid];
+          }
+        });
+      }
+    } else {
+      console.log("this.shouldUsePostProcessing", this.shouldUsePostProcessing);
+      console.log("this.scene", this.scene);
+      console.log("this.bloomLayer", this.bloomLayer);
+      console.log("this.ignoreBloomPassMat", this.ignoreBloomPassMat);
+      console.log("this.sceneObjectsMats", this.sceneObjectsMats);
+      console.log("this.finalComposer", this.finalComposer);
     }
   }
   /**
@@ -731,11 +1219,16 @@ export default class Scene {
    * @param {THREE.Camera} camera
    */
   _setupPostProccesing(renderer, scene, camera) {
+    this._disposePostProcessing();
+
     var renderScene = new RenderPass(scene, camera);
 
     // Bloom Pass
     var bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight)
+      new THREE.Vector2(
+        window.innerWidth * this.ratio,
+        window.innerHeight * this.ratio
+      )
     );
     bloomPass.threshold = 0;
     bloomPass.strength = 0.35;
@@ -749,10 +1242,89 @@ export default class Scene {
     });
 
     // Create a render target for the base scene
-    var renderTarget = new THREE.WebGLRenderTarget(
-      window.innerWidth,
-      window.innerHeight
+    // var renderTarget = new THREE.WebGLRenderTarget(
+    //   window.innerWidth,
+    //   window.innerHeight
+    // );
+
+    const VignetteShader = {
+      uniforms: {
+        tDiffuse: { value: null }, // Input texture
+        vignetteStrength: { value: 0.5 }, // Strength of vignette
+        resolution: {
+          value: new THREE.Vector2(
+            window.innerWidth * this.ratio,
+            window.innerHeight * this.ratio
+          ),
+        },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }`,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float vignetteStrength;
+        uniform vec2 resolution;
+        varying vec2 vUv;
+
+        void main() {
+          vec2 position = (vUv - vec2(0.5)) * resolution / min(resolution.x, resolution.y);
+          float vignette = 1.0 - dot(position, position);
+          vignette = smoothstep(0.0, 1.0, vignette);
+          vec4 color = texture2D(tDiffuse, vUv);
+          color.rgb *= mix(1.0, vignette, vignetteStrength);
+          gl_FragColor = color;
+        }`,
+    };
+
+    var vignettePass = new ShaderPass(
+      new THREE.ShaderMaterial({
+        uniforms: VignetteShader.uniforms,
+        vertexShader: VignetteShader.vertexShader,
+        fragmentShader: VignetteShader.fragmentShader,
+      })
     );
+    vignettePass.renderToScreen = true; // Render the vignette effect
+    vignettePass.uniforms.vignetteStrength.value = 0; // Set vignette strength (0.0 to 1.0)
+
+    const FlashShader = {
+      uniforms: {
+        tDiffuse: { value: null }, // Input texture (the scene)
+        flashAlpha: { value: 0.0 }, // Alpha value for the flash effect (0.0 = no flash, 1.0 = full white)
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float flashAlpha;
+        varying vec2 vUv;
+
+        void main() {
+          vec4 sceneColor = texture2D(tDiffuse, vUv); // Sample the base scene
+          vec4 flashColor = vec4(0.0, 0.0, 0.0, flashAlpha); // White color with dynamic alpha
+          gl_FragColor = mix(sceneColor, flashColor, flashAlpha); // Blend between scene and flash
+        }
+      `,
+    };
+
+    var flashPass = new ShaderPass(
+      new THREE.ShaderMaterial({
+        uniforms: FlashShader.uniforms,
+        vertexShader: FlashShader.vertexShader,
+        fragmentShader: FlashShader.fragmentShader,
+      })
+    );
+
+    flashPass.renderToScreen = true;
+    flashPass.uniforms.flashAlpha.value = 0.0;
 
     // Bloom Composer: Only render objects that require bloom
     var bloomComposer = new EffectComposer(renderer);
@@ -792,24 +1364,201 @@ export default class Scene {
     finalComposer.addPass(finalPass); // Final pass to merge base and bloom
     finalComposer.addPass(bokehPass); // Depth of Field pass
     // finalComposer.addPass(outputPass);
+    finalComposer.addPass(vignettePass); // Add vignette pass at the end
+    finalComposer.addPass(flashPass); // Flash pass at the end
 
-    // Return necessary objects
-    return {
-      finalComposer,
-      bokehPass,
-      bloomPass,
-      renderTarget,
-      finalPass,
-      bloomComposer, // Keep the bloom composer
-    };
+    this.finalComposer = finalComposer;
+    this.finalPass = finalPass;
+    this.renderPass = renderScene;
+    this.bloomComposer = bloomComposer;
+    this.bloomPass = bloomPass;
+    this.bokehPass = bokehPass;
+    this.vignettePass = vignettePass;
+    this.flashPass = flashPass;
   }
-  _vec = new THREE.Vector3();
-  _worldPos = new THREE.Vector3();
-  _localPos = new THREE.Vector3();
+
+  _disposePostProcessing() {
+    // Dispose of final composer and its render targets
+    if (this.finalComposer) {
+      this.finalComposer.renderTarget1.dispose();
+      this.finalComposer.renderTarget2.dispose();
+      this.finalComposer = null;
+    }
+
+    // Dispose of bloom composer
+    if (this.bloomComposer) {
+      this.bloomComposer.renderTarget1.dispose();
+      this.bloomComposer.renderTarget2.dispose();
+      this.bloomComposer = null;
+    }
+
+    // Dispose bloom pass resources
+    if (this.bloomPass) {
+      this.bloomPass.dispose();
+      this.bloomPass = null;
+    }
+
+    // Dispose bokeh pass render targets
+    if (this.bokehPass && this.bokehPass.renderTarget) {
+      this.bokehPass.renderTarget.dispose();
+      this.bokehPass = null;
+    }
+
+    // Dispose vignette pass resources
+    if (this.vignettePass) {
+      if (this.vignettePass.material) {
+        this.vignettePass.material.dispose();
+      }
+      this.vignettePass = null;
+    }
+
+    // Dispose flash pass resources
+    if (this.flashPass) {
+      if (this.flashPass.material) {
+        this.flashPass.material.dispose();
+      }
+      this.flashPass = null;
+    }
+
+    // Dispose of render pass
+    if (this.renderPass) {
+      this.renderPass = null; // No disposal needed, RenderPass doesn't hold any resources
+    }
+
+    // Dispose of final pass
+    if (this.finalPass) {
+      if (this.finalPass.material) {
+        this.finalPass.material.dispose();
+      }
+      this.finalPass = null;
+    }
+  }
+
+  _createFractalMesh(canvas2D) {
+    this._disposeFractalMesh();
+
+    this.canvas2D = canvas2D;
+    let texture = new THREE.CanvasTexture(canvas2D);
+    // texture.wrapS = THREE.RepeatWrapping;
+    // texture.wrapT = THREE.RepeatWrapping;
+    this.fractalTexture = texture;
+
+    const uniforms = {
+      uFractalTexture: { value: texture },
+      uAlphaMode: { value: 0 },
+      uTime: { value: 0 },
+      uResolution: {
+        value: new THREE.Vector2(
+          window.innerWidth * this.ratio,
+          window.innerHeight * this.ratio
+        ),
+      },
+      uXDriftFactor: {
+        value: this.fractalUniformTransitionState.xDriftFactor.current,
+      },
+      uYDriftFactor: {
+        value: this.fractalUniformTransitionState.yDriftFactor.current,
+      },
+      uNoiseScale: {
+        value: this.fractalUniformTransitionState.noiseScale.current,
+      },
+      uDisturbedNoiseScale: {
+        value: 0,
+      },
+      uDisturbedNoiseScaleFactor: {
+        value: 0,
+      },
+      uDistortion: {
+        value: this.fractalUniformTransitionState.distortion.current,
+      },
+      uDisturbedDistortion: {
+        value: 0,
+      },
+      uDisturbedDistortionFactor: {
+        value: 0,
+      },
+    };
+
+    let material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: fractalShader.vertexShader,
+      fragmentShader: fractalShader.fragmentShader,
+      vertexColors: true,
+      glslVersion: THREE.GLSL3,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      // alphaTest: 0.05, // Optional alpha threshold for material
+      // depthWrite: true,
+      // depthTest: true
+    });
+
+    this.fractalMaterial = material;
+
+    let geometry = new THREE.PlaneGeometry(2, 2);
+
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = "Fractal";
+    mesh.position.set(0, 0, 11);
+    mesh.userData.isBloomTarget = true;
+
+    this.fractalMesh = mesh;
+    this._scaleFractal();
+    // mesh.renderOrder = 1;
+    mesh.layers.enable(BLOOM_SCENE);
+    // mesh.layers.enable(NO_BLOOM_SCENE);
+    this.scene.add(mesh);
+  }
+
+  _disposeFractalMesh() {
+    if (this.fractalMesh) {
+      // Remove the mesh from the scene
+      this.scene.remove(this.fractalMesh);
+
+      // Dispose of geometry
+      if (this.fractalMesh.geometry) {
+        this.fractalMesh.geometry.dispose();
+      }
+
+      // Dispose of material
+      if (this.fractalMesh.material) {
+        this.fractalMesh.material.dispose();
+      }
+
+      // Dispose of fractal texture
+      if (this.fractalTexture) {
+        this.fractalTexture.dispose();
+      }
+
+      // Set to null for garbage collection
+      this.fractalMesh = null;
+      this.fractalMaterial = null;
+      this.fractalTexture = null;
+    }
+  }
+
+  _scaleFractal() {
+    // Calculate the appropriate scale for the fractal mesh
+    const distance = this.camera.position.z - this.fractalMesh.position.z;
+    const vFov = (this.camera.fov * Math.PI) / 180; // Convert vertical FOV to radians
+    const planeHeightAtDistance = 2 * Math.tan(vFov / 2) * distance;
+    const planeWidthAtDistance = planeHeightAtDistance * this.camera.aspect;
+
+    // Apply the new scale based on the window size and camera aspect
+    this.fractalMesh.scale.x = planeWidthAtDistance;
+    this.fractalMesh.scale.y = planeHeightAtDistance;
+
+    console.groupCollapsed("Scene._scaleFractal");
+    console.log("distance", distance);
+    console.log("vFov", vFov);
+    console.log("planeHeightAtDistance", planeHeightAtDistance);
+    console.log("planeWidthAtDistance", planeWidthAtDistance);
+    console.log("this.camera.aspect", this.camera.aspect);
+    console.log("this.fractalMesh.scale", this.fractalMesh.scale);
+
+    console.groupEnd();
+  }
 
   _onClick(event) {
-    if (!this.canBurstInteract) return;
-
     this._vec.set(
       event.clientX / window.innerWidth,
       1 - event.clientY / window.innerHeight,
@@ -818,8 +1567,9 @@ export default class Scene {
 
     const ndcX = (event.clientX / window.innerWidth) * 2 - 1; // Range [-1, 1]
     const ndcY = -(event.clientY / window.innerHeight) * 2 + 1; // Range [-1, 1]
-    this._worldPos.set(ndcX, ndcY, 0.5); // Z is in the range [0, 1]
+    this._mouseCast.set(ndcX, ndcY);
 
+    this._worldPos.set(ndcX, ndcY, 0.5); // Z is in the range [0, 1]
     this._worldPos.unproject(this.camera);
     this._worldPos.sub(this.camera.position).normalize();
 
@@ -828,39 +1578,136 @@ export default class Scene {
     this._localPos
       .copy(this.camera.position)
       .add(this._worldPos.multiplyScalar(distance));
+
     this.particles.worldToLocal(this._localPos);
 
-    this._applyRippleEffect(this._vec);
+    this._applyParticleDisturbance(this._vec);
+
+    this._applyFractalDisturbance(this._mouseCast);
 
     this._addParticles(Math.random() * 150 + 50, this._localPos);
   }
 
-  _applyRippleEffect(clickPosition) {
-    // const rippleRadius = 5; // Radius of the ripple effect
-    // const rippleStrength = 10; // How far particles are pushed away
+  _applyFractalDisturbance(clickPosition) {
+    if (
+      !this.fractalMesh ||
+      !this.fractalMaterial ||
+      !this._raycaster ||
+      !this.camera ||
+      !this.drawCompleted ||
+      true
+    )
+      return;
 
-    // const positions = this.pointGeom.attributes.position.array;
-    // const numParticles = this.pointGeom.attributes.position.count;
+    console.groupCollapsed("Scene._applyFractalDisturbance");
+    console.log("clickPosition", clickPosition);
 
-    // for (let i = 0; i < numParticles; i++) {
-    //     const particlePos = new THREE.Vector3(
-    //         positions[i * 3],
-    //         positions[i * 3 + 1],
-    //         positions[i * 3 + 2]
-    //     );
+    this._raycaster.setFromCamera(clickPosition, this.camera);
 
-    //     const distance = particlePos.distanceTo(clickPosition);
-    //     if (distance < rippleRadius) {
-    //         const offset = particlePos.clone().sub(clickPosition).normalize().multiplyScalar(rippleStrength * (rippleRadius - distance) / rippleRadius);
+    if (this.fractalMesh) {
+      const intersects = this._raycaster.intersectObject(this.fractalMesh);
 
-    //         positions[i * 3] += offset.x;
-    //         positions[i * 3 + 1] += offset.y;
-    //         positions[i * 3 + 2] += offset.z;
-    //     }
-    // }
+      function checkTextureAlphaAtUV(uv, texture) {
+        // Get the texture image and canvas
+        const canvas = texture.image;
+        const ctx = canvas.getContext("2d");
 
-    // Add the new burst to the arrays
-    // this.burstPositions[this.burstIndex].copy(clickPosition.clone());
+        // Calculate pixel coordinates from UV coordinates
+        const x = Math.floor(uv.x * canvas.width);
+        const y = Math.floor(uv.y * canvas.height);
+
+        // Get the pixel data (RGBA) from the texture at (x, y)
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+
+        // Check the alpha value (pixel[3] is the alpha channel)
+        if (pixel[3] > 0) {
+          return true; // Opaque pixel
+          // Handle click on fractal
+        } else {
+          return false; // Transparent pixel
+          // Handle click on background
+        }
+      }
+
+      if (intersects.length > 0) {
+        const intersection = intersects[0];
+
+        // Step 2: Get UV coordinates of the intersection point
+        const uv = intersection.uv;
+        console.log("Click on fractal", intersects[0], uv);
+
+        // Step 3: Check the texture alpha value at the clicked UV coordinate
+        if (
+          checkTextureAlphaAtUV(
+            uv,
+            this.fractalMaterial.uniforms.uFractalTexture.value
+          )
+        ) {
+          console.log("Clicked On Fractal Opaque Pixel");
+          // console.log("Change the fractal texture");
+          // this._setFractalUniformValues(
+          //   this.targetXDriftFactor,
+          //   this.targetYDriftFactor,
+          //   this.targetDistortion,
+          //   3.5
+          // );
+
+          if (this.fractalUniformTransitionState.noiseScale.state === "idle") {
+            this.fractalUniformTransitionState.noiseScale.current += 2;
+            this.fractalUniformTransitionState.noiseScale.factor = 1;
+            this.fractalUniformTransitionState.noiseScale.start =
+              this.fractalUniformTransitionState.noiseScale.current;
+            this.fractalUniformTransitionState.noiseScale.target =
+              this.fractalUniformTransitionState.noiseScale.original;
+            this.fractalUniformTransitionState.noiseScale.state = "disturbed";
+            this.fractalUniformTransitionState.noiseScale.currentTime = 0;
+            this.fractalUniformTransitionState.noiseScale.hitDisturbedPeak = false;
+          } else {
+            // this.fractalUniformTransitionState.noiseScale.current += 10;
+            this.fractalUniformTransitionState.noiseScale.current =
+              this.fractalUniformTransitionState.noiseScale.current *
+                this.fractalUniformTransitionState.noiseScale.factor +
+              2;
+            this.fractalUniformTransitionState.noiseScale.start =
+              this.fractalUniformTransitionState.noiseScale.current;
+            this.fractalUniformTransitionState.noiseScale.currentTime = 0;
+            // this.fractalUniformTransitionState.noiseScale.currentTime -= 5;
+            // if (
+            //   this.fractalUniformTransitionState.noiseScale.currentTime <= 0
+            // ) {
+            //   this.fractalUniformTransitionState.noiseScale.currentTime = 0;
+            // }
+            this.fractalUniformTransitionState.noiseScale.factor += 0.25;
+          }
+
+          // if (
+          //   this.fractalUniformTransitionState.yDriftFactor.state === "idle"
+          // ) {
+          //   this.fractalUniformTransitionState.yDriftFactor.target =
+          //     Math.random() * (0.15 - 0.06) + 0.06;
+          //   this.fractalUniformTransitionState.yDriftFactor.state = "disturbed";
+          // } else {
+          //   this.fractalUniformTransitionState.yDriftFactor.target += 0.05;
+          // }
+
+          // if (this.fractalUniformTransitionState.distortion.state === "idle") {
+          //   this.fractalUniformTransitionState.distortion.target =
+          //     Math.random() * (0.05 - 0.02) + 0.02;
+          //   this.fractalUniformTransitionState.distortion.state = "disturbed";
+          // } else {
+          //   this.fractalUniformTransitionState.distortion.target +=
+          //     Math.random() * (0.05 - 0.02) + 0.02;
+
+          //   if (this.fractalUniformTransitionState.distortion.target > 0.06) {
+          //     this.fractalUniformTransitionState.distortion.target = 0.06;
+          //   }
+          // }
+        }
+      }
+    }
+  }
+
+  _applyParticleDisturbance(clickPosition) {
     this.burstTimes[this.burstIndex] = 0.0; // Reset the burst time for this burst
     this.particles.material.uniforms.uClickPositions.value[
       this.burstIndex
@@ -868,31 +1715,6 @@ export default class Scene {
 
     // Update the index for the next burst
     this.burstIndex = (this.burstIndex + 1) % 5;
-    // this.pointMat.uniforms.uActiveBursts.value = this.burstIndex;
-
-    // console.log('this.burstIndex', this.burstIndex);
-    // console.log('this.particles.material.uniforms.uClickPositions.value', this.particles.material.uniforms.uClickPositions.value);
-
-    // this.pointGeom.attributes.position.needsUpdate = true;
-    // Store the click position in a uniform
-    // this.pointMat.uniforms.uClickPosition.value.copy(clickPosition);
-    // this.pointMat.uniforms.uBurstTime.value = 0;
-    // this.clickPositionDebugCube.position.copy(clickPosition);
-    // this.clickPositionDebugCube.position.copy(
-    //   this.particles.localToWorld(this.pointMat.uniforms.uClickPosition.value)
-    // );
-
-    // const worldPosition = clickPosition.clone();
-    // worldPosition.x = worldPosition.x * 2 - 1; // X from [0,1] to [-1,1]
-    // worldPosition.y = worldPosition.y * 2 - 1; // Y from [0,1] to [-1,1]
-    // // Z can be 0 (near plane), 1 (far plane), or something in between
-
-    // // Step 3: Unproject to world space
-    // worldPosition.unproject(this.camera);
-    // this.clickPositionDebugCube.position.copy(worldPosition);
-
-    // console.log("clickPosition", clickPosition);
-    // console.log("worldPosition", worldPosition);
   }
 
   _createParticleTexture() {
@@ -949,6 +1771,7 @@ export default class Scene {
         uActiveBursts: { value: 0 },
         uElapsedTime: { value: 0 },
         cameraPosition: { value: new THREE.Vector3(0, 0, 12) },
+        uHasBloom: { value: 0 },
       },
       vertexShader: VertexShader,
       fragmentShader: FragmentShader,
@@ -1198,116 +2021,245 @@ export default class Scene {
     pointGeom.attributes.maxLife.needsUpdate = true;
   }
 
+  _calculateRatio() {
+    const gl = this.renderer.getContext();
+    const dpr = window.devicePixelRatio || 1;
+    const bsr =
+      //@ts-ignore
+      gl.webkitBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.mozBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.msBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.oBackingStorePixelRatio ||
+      //@ts-ignore
+      gl.backingStorePixelRatio ||
+      1;
+
+    const ratio = dpr / bsr;
+
+    this.ratio = ratio;
+  }
+
   _onWindowResize() {
+    console.groupCollapsed("Scene._onWindowResize");
+    console.trace();
+    console.groupEnd();
+    this._disposeFractalMesh();
+
     window.clearTimeout(this.cleanTimeout);
+    window.clearTimeout(this.resizeTimeout);
     window.cancelAnimationFrame(this.animationFrame);
-    if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
-    // this.renderer.clear();
-    this.resizeTimeout = setTimeout(() => {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.position.copy(this.cameraStartPosition);
-      this.camera.updateProjectionMatrix();
+    // Update renderer size and pixel ratio
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this._calculateRatio();
+    this.renderer.setPixelRatio(this.ratio);
 
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.calculateRatio();
-      this.renderer.setPixelRatio(this.ratio);
+    // Update camera aspect and projection matrix
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
 
-      this.renderTarget.setSize(window.innerWidth, window.innerHeight);
-      this.finalComposer.setSize(window.innerWidth, window.innerHeight);
-      this.bloomComposer.setSize(window.innerWidth, window.innerHeight);
-      this.bloomPass.setSize(window.innerWidth, window.innerHeight);
-      this.bokehPass.setSize(window.innerWidth, window.innerHeight);
+    this._setupPostProccesing(this.renderer, this.scene, this.camera);
 
-      // Create a new empty data buffer to fill the texture
-      // For simplicity, let's assume the texture is a square of dimension 512x512 and RGBA format
-      const size = 512 * 512;
-      const data = new Uint8Array(4 * size);
+    this._createFractalMesh(this.canvas2D);
 
-      // Fill the buffer with your new data (e.g., set all pixels to transparent)
-      for (let i = 0; i < size; i++) {
-        data[4 * i] = 0; // R
-        data[4 * i + 1] = 0; // G
-        data[4 * i + 2] = 0; // B
-        data[4 * i + 3] = 0; // A, 0 is fully transparent
-      }
-
-      // Create a new THREE.DataTexture
-      const newTexture = new THREE.DataTexture(
-        data,
-        512,
-        512,
-        THREE.RGBAFormat
-      );
-      newTexture.needsUpdate = true;
-      this.fractalTexture.needsUpdate = false;
-      this.fractalTexture.dispose();
-
-      this.fractalMaterial.uniforms.uFractalTexture.value = newTexture;
-      this.fractalMaterial.uniforms.uResolution.value = new THREE.Vector2(
-        window.innerWidth * this.ratio,
-        window.innerHeight * this.ratio
-      );
-      this._scaleFractal();
-
-      this.cleanTimeout = window.setTimeout(() => {
-        this.fractalMaterial.uniforms.uFractalTexture.value =
-          this.fractalTexture;
-        this.fractalTexture.needsUpdate = true;
-        this._animate();
-      }, 100);
+    // Reapply texture and rescale after resize completes
+    this.cleanTimeout = window.setTimeout(() => {
+      this._render();
     }, 100);
   }
 
-  _onKeyPress(e) {
-    return;
-    if (e.key === "b") {
-      this._toggleParticleBloom();
-    }
-  }
-
-  keysDown = {};
   _onKeyDown(e) {
     this.keysDown[e.key] = true;
 
+    if (this.needsKeyReset) return;
+
     if (this.keysDown["b"] && this.keysDown["p"]) {
       this._toggleParticleBloom();
+
+      this.needsKeyReset = true;
+      return;
     }
 
     if (this.keysDown["b"] && this.keysDown["f"]) {
       this._toggleFractalBloom();
+
+      this.needsKeyReset = true;
+      return;
     }
 
-    if (this.keysDown["b"] && this.keysDown["l"]) {
+    if (
+      this.keysDown["b"] &&
+      this.keysDown["h"] &&
+      process.env.NODE_ENV === "development"
+    ) {
+      this._toggleFinalCompositionBloomHide();
+
+      this.needsKeyReset = true;
+      return;
+    }
+
+    if (this.keysDown["b"] && this.keysDown["r"]) {
+      if (this.keysDown["ArrowUp"]) {
+        this._incrementControlledBloomRadius(0.1);
+        this.needsKeyReset = true;
+        return;
+      } else if (this.keysDown["ArrowDown"]) {
+        this._incrementControlledBloomRadius(-0.1);
+        this.needsKeyReset = true;
+        return;
+      }
+    }
+
+    if (
+      this.keysDown["b"] &&
+      this.keysDown["l"] &&
+      process.env.NODE_ENV === "development"
+    ) {
       this.shouldBlur = !this.shouldBlur;
+
+      this.needsKeyReset = true;
+      return;
+    }
+
+    if (
+      this.keysDown["f"] &&
+      this.keysDown["a"] &&
+      process.env.NODE_ENV === "development"
+    ) {
+      this._toggleFractalAlphaMode();
+
+      this.needsKeyReset = true;
+      return;
+    }
+
+    if (
+      this.keysDown["b"] &&
+      this.keysDown["o"] &&
+      process.env.NODE_ENV === "development"
+    ) {
+      this._toggleBloomBehaviorOverride();
+
+      this.needsKeyReset = true;
+      return;
+    }
+
+    if (this.keysDown["d"] && process.env.NODE_ENV === "development") {
+      this._toggleDebugInfoContainer();
+      this.needsKeyReset = true;
+      return;
     }
   }
 
   _onKeyUp(e) {
     this.keysDown[e.key] = false;
+    this.needsKeyReset = false;
   }
 
   _toggleParticleBloom() {
     if (this.particles && this.particles.layers) {
       if (this.bloomLayer.test(this.particles.layers) === false) {
+        console.log("Enabling bloom for particles");
         this.particles.layers.enable(BLOOM_SCENE);
         this.particles.layers.disable(NO_BLOOM_SCENE);
       } else {
+        console.log("Disabling bloom for particles");
         this.particles.layers.disable(BLOOM_SCENE);
         this.particles.layers.enable(NO_BLOOM_SCENE);
       }
+
+      // console.log(
+      //   "this.bloomLayer.test(this.particles.layers)",
+      //   this.bloomLayer.test(this.particles.layers)
+      // );
     }
+  }
+
+  _toggleFinalCompositionBloomHide() {
+    this.shouldHideBloomTargetsOnFinalComposition =
+      !this.shouldHideBloomTargetsOnFinalComposition;
+
+    // console.log(
+    //   "this.shouldHideBloomTargetsOnFinalComposition",
+    //   this.shouldHideBloomTargetsOnFinalComposition
+    // );
   }
 
   _toggleFractalBloom() {
     if (this.fractalMesh && this.fractalMesh.layers) {
       if (this.bloomLayer.test(this.fractalMesh.layers) === false) {
+        console.log("Enabling bloom for fractal mesh");
         this.fractalMesh.layers.enable(BLOOM_SCENE);
         this.fractalMesh.layers.disable(NO_BLOOM_SCENE);
       } else {
+        console.log("Disabling bloom for fractal mesh");
         this.fractalMesh.layers.disable(BLOOM_SCENE);
         this.fractalMesh.layers.enable(NO_BLOOM_SCENE);
       }
+    }
+  }
+
+  _toggleFractalAlphaMode() {
+    if (this.fractalMaterial) {
+      this.fractalMaterial.uniforms.uAlphaMode.value =
+        this.fractalMaterial.uniforms.uAlphaMode.value === 0 ? 1 : 0;
+    }
+  }
+
+  _toggleBloomBehaviorOverride() {
+    if (process.env.NODE_ENV !== "development") return;
+    this.bloomState.overrideBloomBehavior =
+      !this.bloomState.overrideBloomBehavior;
+  }
+
+  _incrementControlledBloomRadius(inc) {
+    this.bloomState.controlledRadius += inc;
+
+    if (this.bloomState.controlledRadius < 0) {
+      this.bloomState.controlledRadius = 0;
+    }
+  }
+
+  _createDebugInfoContainer() {
+    if (this.writeDebug) {
+      this.infoContainer = document.createElement("div");
+      this.infoContainer.style.position = "absolute";
+      this.infoContainer.style.top = "8em";
+      this.infoContainer.style.right = "0";
+      this.infoContainer.style.width = "auto";
+      this.infoContainer.style.textAlign = "right";
+      this.infoContainer.style.color = "white";
+      this.infoContainer.style.padding = "5px";
+      this.infoContainer.style.fontFamily = "monospace";
+      this.infoContainer.style.fontSize = "12px";
+      this.infoContainer.style.zIndex = "1000";
+      this.infoContainer.id = "fractal-info";
+      this.infoContainer.style.pointerEvents = "none";
+      this.infoContainer.style.borderRadius = "5px";
+      this.infoContainer.style.padding = "10px";
+      this.infoContainer.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      this.renderer.domElement.parentElement.appendChild(this.infoContainer);
+    }
+  }
+
+  _disposeDebugInfoContainer() {
+    if (this.infoContainer) {
+      this.infoContainer.remove();
+      this.infoContainer = null;
+    }
+  }
+
+  _toggleDebugInfoContainer() {
+    if (process.env.NODE_ENV !== "development") return;
+
+    this.writeDebug = !this.writeDebug;
+
+    if (this.writeDebug) {
+      this._createDebugInfoContainer();
+    } else {
+      this._disposeDebugInfoContainer();
     }
   }
 }

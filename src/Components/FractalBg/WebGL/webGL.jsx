@@ -12,13 +12,20 @@ export default ({
   canBurstInteract = false,
   shouldBlur = false,
   xDriftFactor,
+  onSetXDriftFactor,
   yDriftFactor,
+  onSetYDriftFactor,
   noiseScale,
+  onSetNoiseScale,
   distortion,
+  onSetDistortion,
   loaded,
   introComplete,
   redraw,
   onFireWorkIntroComplete,
+  firstFullRenderComplete,
+  drawCompleted,
+  isDrawing,
 }) => {
   const canvas3DRef = React.useRef(null);
   const scene = useRef(new Scene());
@@ -35,7 +42,14 @@ export default ({
       shouldBlur,
       introComplete,
       onFireWorkIntroComplete,
-      redraw
+      redraw,
+      firstFullRenderComplete,
+      onSetXDriftFactor,
+      onSetYDriftFactor,
+      onSetDistortion,
+      onSetNoiseScale,
+      drawCompleted,
+      isDrawing,
     });
   }, [
     xDriftFactor,
@@ -48,7 +62,14 @@ export default ({
     shouldBlur,
     introComplete,
     onFireWorkIntroComplete,
-    redraw
+    redraw,
+    firstFullRenderComplete,
+    onSetXDriftFactor,
+    onSetYDriftFactor,
+    onSetDistortion,
+    onSetNoiseScale,
+    drawCompleted,
+    isDrawing,
   ]);
 
   const canvas2DRef = useRef(null);
@@ -84,8 +105,12 @@ export default ({
       canvas3DRef.current.style.width = `${window.innerWidth}px`;
       canvas3DRef.current.style.height = `${window.innerHeight}px`;
 
-      if(scene.current) {
+      if (scene.current) {
+        // console.groupCollapsed("WebGL Resize");
+        // console.groupEnd();
+
         scene.current.setCanvas(canvas2DRef.current);
+        scene.current._onWindowResize();
       }
       // create();
     };
@@ -122,6 +147,7 @@ export default ({
       canvas3DRef.current.height = window.innerHeight * ratio;
       canvas3DRef.current.style.width = `${window.innerWidth}px`;
       canvas3DRef.current.style.height = `${window.innerHeight}px`;
+      window.removeEventListener("resize", onResize);
       window.addEventListener("resize", onResize);
     }
 

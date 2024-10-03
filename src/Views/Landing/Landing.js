@@ -15,6 +15,162 @@ import Link from "../../Components/Link";
 import ScrollButton from "../../Components/ScrollButton";
 import { isElementInView } from "../../util/misc";
 import { useIntersectionObserver } from "../../util/IntersectionObserver";
+import { Button, Typography } from "@mui/material";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
+import Checkbox from "@mui/material/Checkbox";
+
+const WebGLChecker = ({ onContinued, onRenderChoice, loaded }) => {
+  const [shouldContinue, setShouldContinue] = useState(false);
+
+  const [value, setValue] = useState(null);
+  const [dontShowAgain, setDontShowAgain] = useState(null);
+
+  const didntSeeRef = useRef(false);
+
+  useEffect(() => {
+    if (dontShowAgain === null) return;
+
+    localStorage.setItem("skip-render-check", dontShowAgain);
+  }, [dontShowAgain]);
+
+  useEffect(() => {
+    if (value === null) return;
+
+    localStorage.setItem("render-engine", value);
+    if (onRenderChoice) onRenderChoice(value);
+  }, [value]);
+
+  useEffect(() => {
+    // check if device is webgl compatible
+    const canvas = document.createElement("canvas");
+    const gl =
+      canvas.getContext("webgl2") || canvas.getContext("experimental-webgl");
+    const isWebGL = !!gl;
+
+    if (localStorage.getItem("render-engine")) {
+      console.log(
+        'localStorage.getItem("render-engine")',
+        localStorage.getItem("render-engine")
+      );
+      setValue(localStorage.getItem("render-engine"));
+    } else {
+      setValue("webgl");
+    }
+
+    if (localStorage.getItem("skip-render-check") === "true" || !isWebGL) {
+      didntSeeRef.current = true;
+      setDontShowAgain(true);
+      setShouldContinue(true);
+    } else {
+      setDontShowAgain(false);
+    }
+  }, []);
+
+  const [outFinished, setOutFinished] = useState(false);
+
+  useEffect(() => {
+    if (shouldContinue && (didntSeeRef.current || outFinished)) {
+      if (onContinued) onContinued();
+    }
+  }, [shouldContinue, outFinished]);
+
+  return (
+    <>
+      <div
+        className={`js-scroll ${
+          loaded && !shouldContinue ? "fade-in" : ""
+        } ${shouldContinue && !didntSeeRef.current ? "fade-out-top" : ""}`}
+        onAnimationEnd={() => {
+          if (shouldContinue) {
+            window.setTimeout(() => {
+              setOutFinished(true);
+            }, 500)
+          }
+        }}
+      >
+        <div className="intro" style={{ paddingBottom: "0" }}>
+          <div style={{ paddingBottom: ".25em" }}>
+            <Typography sx={{ textAlign: "center" }} variant="h4">
+              Select a Rendering Engine
+            </Typography>
+          </div>
+          <div
+            className="menu"
+            style={{
+              display: "flex",
+              flexFlow: "column",
+              alignContent: "center",
+              justifyContent: "center",
+              alignItems: "center",
+              justifyItems: "center",
+            }}
+          >
+            <FormControl>
+              <RadioGroup
+                sx={{
+                  padding: "0 1.5em",
+                  display: "flex",
+                  alignContent: "center",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  justifyItems: "center",
+                }}
+                row
+                aria-labelledby="demo-row-radio-buttons-group-label"
+                name="row-radio-buttons-group"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+              >
+                <FormControlLabel
+                  value="webgl"
+                  control={<Radio />}
+                  label="ThreeJS WebGL"
+                />
+                <FormControlLabel
+                  value="canvas"
+                  control={<Radio />}
+                  label="HTML5 2D Canvas"
+                />
+              </RadioGroup>
+            </FormControl>
+            <Button
+              variant="contained"
+              sx={{
+                m: "1em 0",
+                backgroundColor: "white",
+                color: "black",
+                border: "1px solid black",
+                ">*": { color: "black !important" },
+              }}
+              onClick={() => {
+                setShouldContinue(true);
+              }}
+            >
+              <Typography variant="button">Continue</Typography>
+            </Button>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={dontShowAgain}
+                  onChange={(_, checked) => {
+                    setDontShowAgain(checked);
+                  }}
+                />
+              }
+              label={
+                <Typography variant="caption">Don't show this again</Typography>
+              }
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default ({
   drawX,
@@ -26,6 +182,7 @@ export default ({
   isZenMode,
   loaded,
   onIntroComplete,
+  onRenderChoice,
 }) => {
   // const linkContainer = useRef(null);
   const nameContainer = useRef(null);
@@ -175,6 +332,8 @@ export default ({
     }
   };
 
+  const [FTUEComplete, setFTUEComplete] = useState(false);
+
   return (
     <div className="landing" id="landing">
       <main id="intro-wrapper-container">
@@ -189,132 +348,144 @@ export default ({
             }
           }}
           onPointerEnter={() => {
+            if (!introComplete.current) return;
+
             wrapperRef.current.classList.remove("no-blur");
           }}
           onPointerLeave={() => {
             wrapperRef.current.classList.add("no-blur");
           }}
         >
-          <div
-            className="js-scroll"
-            ref={nameContainer}
-            onAnimationStart={(e) => {
-              setIntroStarted(true);
-            }}
-            onAnimationEnd={(e) => {
-              _onIntroComplete();
-            }}
-          >
-            <div className="intro">
-              <div style={{ paddingBottom: ".25em" }}>
-                <ColorCharacters
-                  ref={charContainer}
-                  style={
-                    !resizing.current && state.wrapped
-                      ? { display: "none", ">*": { display: "none" } }
-                      : { fontWeight: "bold" }
-                  }
-                  string={"Christopher Gomez"}
-                  className="Outlined-Text"
-                  color={(i) => "white"}
-                />
-                <div
-                  style={
-                    !resizing.current && state.wrapped
-                      ? { fontWeight: "bold" }
-                      : { display: "none", ">*": { display: "none" } }
-                  }
-                >
+          {FTUEComplete ? (
+            <div
+              className="js-scroll"
+              ref={nameContainer}
+              onAnimationStart={(e) => {
+                setIntroStarted(true);
+              }}
+              onAnimationEnd={(e) => {
+                _onIntroComplete();
+              }}
+            >
+              <div className="intro">
+                <div style={{ paddingBottom: ".25em" }}>
                   <ColorCharacters
-                    // ref={charContainer}
-                    string={"Christopher"}
+                    ref={charContainer}
+                    style={
+                      !resizing.current && state.wrapped
+                        ? { display: "none", ">*": { display: "none" } }
+                        : { fontWeight: "bold" }
+                    }
+                    string={"Christopher Gomez"}
                     className="Outlined-Text"
                     color={(i) => "white"}
                   />
-                  <ColorCharacters
-                    // ref={charContainer}
-                    string={"Gomez"}
-                    className="Outlined-Text"
-                    color={(i) => "white"}
-                  />
+                  <div
+                    style={
+                      !resizing.current && state.wrapped
+                        ? { fontWeight: "bold" }
+                        : { display: "none", ">*": { display: "none" } }
+                    }
+                  >
+                    <ColorCharacters
+                      // ref={charContainer}
+                      string={"Christopher"}
+                      className="Outlined-Text"
+                      color={(i) => "white"}
+                    />
+                    <ColorCharacters
+                      // ref={charContainer}
+                      string={"Gomez"}
+                      className="Outlined-Text"
+                      color={(i) => "white"}
+                    />
+                  </div>
                 </div>
+                <div className="menu">
+                  <ScrollButton scrollTarget=".portfolio">
+                    <ColorCharacters
+                      string={"Portfolio"}
+                      color={(i) => "white"}
+                    />
+                  </ScrollButton>
+                  <ScrollButton scrollTarget=".about">
+                    <ColorCharacters string={"About"} color={(i) => "white"} />
+                  </ScrollButton>
+                </div>
+                {/* <GlowingText delay={1000} letters={"Christopher Gomez".split("")} /> */}
               </div>
-              <div className="menu">
-                <ScrollButton scrollTarget=".portfolio">
-                  <ColorCharacters
-                    string={"Portfolio"}
-                    color={(i) => "white"}
-                  />
-                </ScrollButton>
-                <ScrollButton scrollTarget=".about">
-                  <ColorCharacters string={"About"} color={(i) => "white"} />
-                </ScrollButton>
-              </div>
-              {/* <GlowingText delay={1000} letters={"Christopher Gomez".split("")} /> */}
-            </div>
-            {/* <div className='tagline'>
+              {/* <div className='tagline'>
               <GlowingText delay={1000} letters={tagline}/>
             </div> */}
-            <div className="social animate-icons">
-              <Link newTab href="https://github.com/christopher-gomez">
-                <FontAwesomeIcon
-                  style={{
-                    // transition: "color .25s ease-out",
-                    color: "white",
-                  }}
-                  icon={faGithubSquare}
-                />
-              </Link>
-              <Link
-                newTab
-                href="https://www.linkedin.com/in/christopher-gomez-8489a7186/"
-              >
-                <FontAwesomeIcon
-                  style={{
-                    // transition: "color .25s ease-out",
-                    color: "white",
-                  }}
-                  icon={faLinkedinIn}
-                />
-              </Link>
-              <Link newTab href="https://codepen.io/christophergomez">
-                <FontAwesomeIcon
-                  style={{
-                    // transition: "color .25s ease-out",
-                    color: "white",
-                  }}
-                  icon={faCodepen}
-                />
-              </Link>
+              <div className="social animate-icons">
+                <Link newTab href="https://github.com/christopher-gomez">
+                  <FontAwesomeIcon
+                    style={{
+                      // transition: "color .25s ease-out",
+                      color: "white",
+                    }}
+                    icon={faGithubSquare}
+                  />
+                </Link>
+                <Link
+                  newTab
+                  href="https://www.linkedin.com/in/christopher-gomez-8489a7186/"
+                >
+                  <FontAwesomeIcon
+                    style={{
+                      // transition: "color .25s ease-out",
+                      color: "white",
+                    }}
+                    icon={faLinkedinIn}
+                  />
+                </Link>
+                <Link newTab href="https://codepen.io/christophergomez">
+                  <FontAwesomeIcon
+                    style={{
+                      // transition: "color .25s ease-out",
+                      color: "white",
+                    }}
+                    icon={faCodepen}
+                  />
+                </Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <WebGLChecker
+              onContinued={() => setFTUEComplete(true)}
+              onRenderChoice={onRenderChoice}
+              loaded={loaded}
+            />
+          )}
         </div>
       </main>
-      <span
-        className="js-scroll"
-        style={{ zIndex: 1 }}
-        ref={arrowContainer}
-        onAnimationStart={(e) => {
-          // console.log("animation start", e);
-          clearTimeout(arrowBounceTimeout.current);
-          setShouldArrowBounce(false);
-        }}
-        onAnimationEnd={(e) => {
-          // console.log("animation end", e);
+      {FTUEComplete && (
+        <span
+          className="js-scroll"
+          style={{ zIndex: 1 }}
+          ref={arrowContainer}
+          onAnimationStart={(e) => {
+            // console.log("animation start", e);
+            clearTimeout(arrowBounceTimeout.current);
+            setShouldArrowBounce(false);
+          }}
+          onAnimationEnd={(e) => {
+            // console.log("animation end", e);
 
-          arrowBounceTimeout.current = setTimeout(() => {
+            arrowBounceTimeout.current = setTimeout(() => {
+              setShouldArrowBounce(true);
+            }, 1000);
+          }}
+          onPointerEnter={() => {
+            setShouldArrowBounce(false);
+          }}
+          onPointerLeave={() => {
             setShouldArrowBounce(true);
-          }, 1000);
-        }}
-        onPointerEnter={() => {
-          setShouldArrowBounce(false);
-        }}
-        onPointerLeave={() => {
-          setShouldArrowBounce(true);
-        }}
-      >
-        <ScrollArrow to=".portfolio" shouldBounce={shouldArrowBounce} />
-      </span>
+          }}
+        >
+          <ScrollArrow to=".portfolio" shouldBounce={shouldArrowBounce} />
+        </span>
+      )}
     </div>
   );
 };

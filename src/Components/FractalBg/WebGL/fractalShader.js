@@ -16,11 +16,21 @@ precision highp float;
 uniform sampler2D uFractalTexture;
 uniform float uTime;
 uniform vec2 uResolution;
+uniform vec2 uClickPosition;  // Click position in screen-space
 
 uniform float uXDriftFactor;
 uniform float uYDriftFactor;
 uniform float uNoiseScale;
 uniform float uDistortion;
+
+uniform float uDisturbedNoiseScale;
+uniform float uDisturbedNoiseScaleFactor;
+
+uniform float uDisturbedDistortion;
+uniform float uDisturbedDistortionFactor;
+
+uniform int uAlphaMode;
+
 varying vec2 vUv;
 
 out vec4 fragColor;
@@ -100,13 +110,12 @@ vec3 mod289(vec3 x) {
 
 void main() {
     vec2 st = gl_FragCoord.xy / uResolution.xy;
-    // st.x *= uResolution.x / uResolution.y;
     st = clamp(st, 0.0, 1.0);
 
     // vec4 texColor = texture(uFractalTexture, st);
 
-    float xDriftFactor = 0.01; // Adjust for stronger or subtler drift
-    float yDriftFactor = 0.05; // Adjust for stronger or subtler drift
+    // float xDriftFactor = 0.01; // Adjust for stronger or subtler drift
+    // float yDriftFactor = 0.05; // Adjust for stronger or subtler drift
 
     // Time-varying offset for the falling effect
     vec2 drift = vec2(uTime * uXDriftFactor, uTime * uYDriftFactor); // Adjust x for lateral drift, y for downward movement
@@ -118,19 +127,22 @@ void main() {
     // float distortion = 0.01; // Adjust for stronger or subtler distortion
     
     // Apply a smooth noise pattern based on the fragment position and time
-    float noiseValue = snoise((st + drift) * uNoiseScale);
+    float noiseValue = snoise((st + drift) * (uNoiseScale));
 
     // Offset the texture coordinates slightly based on the noise to simulate flow
-    vec2 flow = vec2(noiseValue * uDistortion, noiseValue * uDistortion * 0.03); // Anisotropic distortion
+    float noiseValueDisturbed = noiseValue;
+    // + (snoise((st + drift) * (uDisturbedNoiseScale)) * uDisturbedNoiseScaleFactor);
+    vec2 flow = vec2(noiseValueDisturbed * (uDistortion + (uDisturbedDistortion * uDisturbedDistortionFactor)), noiseValueDisturbed * (uDistortion + (uDisturbedDistortion * uDisturbedDistortionFactor)) * 0.03); // Anisotropic distortion
     
     // Fetch the color from the offset coordinates
-    vec4 color = texture(uFractalTexture, st + flow);
-    float originalAlpha = color.a * (1.0 - length(gl_PointCoord - vec2(0.5, 0.5)));
-    fragColor = color; // Apply the fade to the color's alpha
+    vec4 texColor = texture(uFractalTexture, st + flow);
+
+    // Check the alpha value of the texture to see if it's a valid position
+    fragColor = texColor;
 }
 `;
 
 export default {
-    vertexShader,
-    fragmentShader
-}
+  vertexShader,
+  fragmentShader,
+};

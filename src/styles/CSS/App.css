@@ -56,13 +56,14 @@ body::-webkit-scrollbar {
   width: fit-content !important;
   border: 3px solid rgba(255, 255, 255, 0.85);
   opacity: 1;
-  transition: background 1.5s 0.5s ease-out, opacity 0.5s 1s ease-out, border 0.5s ease-out, color 1.75s ease-out;
-  animation: blur-in 1.5s ease-out both;
+  transition: background-color 1s ease-out, opacity 0.5s 1s ease-out, border 0.5s ease-out, color 1.75s ease-out, width 1.5s ease-out, height 1.5s ease-out, padding 1.5s ease-out, border-radius 1.5s ease-out, box-shadow 1.5s ease-out;
+  animation: blur-in 0.5s forwards;
   color: rgb(255, 255, 255) !important;
   /* Let's define an animation: */
 }
 .blur-container.no-blur {
-  animation: blur-out 1.5s ease-out forwards;
+  background-color: rgba(44, 48, 59, 0.7294117647);
+  animation: blur-out 1.5s 0.25s ease-out both;
 }
 .blur-container * {
   color: white !important;
@@ -153,16 +154,13 @@ body::-webkit-scrollbar {
   }
 }
 @keyframes blur-in {
-  0% {
-    backdrop-filter: blur(0px);
-  }
   100% {
     backdrop-filter: blur(10px);
   }
 }
 @keyframes blur-out {
   from {
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
   }
   to {
     backdrop-filter: blur(0px);
@@ -205,7 +203,7 @@ body::-webkit-scrollbar {
 }
 
 .fade-out-top {
-  animation: fade-out-top 1.25s linear;
+  animation: fade-out-top 0.5s linear;
   animation-fill-mode: forwards;
 }
 

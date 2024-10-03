@@ -12,6 +12,8 @@ import {
   faUnity,
   faDocker,
   faGoogle,
+  faAndroid,
+  faApple
 } from "@fortawesome/free-brands-svg-icons";
 import { faGamepad, faMobile } from "@fortawesome/free-solid-svg-icons";
 import syn from "../../Assets/images/syn_orange.png";
@@ -41,8 +43,51 @@ import TravelMap2 from "../../Assets/images/travel_map2.png";
 import TravelMap3 from "../../Assets/images/travel_map_mobile.png";
 import spotilizeLightMode from "../../Assets/images/spotilize.png";
 import spotilizeJamesBrown from "../../Assets/images/spotilize_v2_jamesbrown.png";
+import RWBY from "../../Assets/images/RWBY.png";
 
 const items = [
+  {
+    img: { data: [{ url: RWBY }] },
+    title: "RWBY: Arrowfell",
+    description:
+      "I worked on the development of the mobile port for RWBY: Arrowfell on CrunchyRoll, focusing on optimizing gameplay for touch interfaces, implementing smooth scrolling mechanics, and refining UI interactions to create a seamless player experience across mobile devices." +
+      "I played a key role in the development of the RWBY: Arrowfell CrunchyRoll mobile port, adapting the game for touch-based controls and ensuring an intuitive user experience. This included reworking input systems to support touch gestures, fine-tuning UI elements for mobile screens, and optimizing performance for various devices. I also contributed to gameplay improvements, implementing smooth scrolling and interaction mechanics to maintain the quality of the original game on mobile platforms. My work ensured a seamless transition from console to mobile, preserving the game's core experience for a new audience.",
+    icons: [
+      {
+        type: "fizz",
+        icon: "icon-csharp",
+      },
+      {
+        type: "font-awesome",
+        icon: faUnity,
+      },
+      {
+        type: "font-awesome",
+        icon: faMobile,
+      },
+      {
+        type: "font-awesome",
+        icon: faAndroid,
+      },
+      {
+        type: "font-awesome",
+        icon: faApple,
+      },
+
+    ],
+    links: [
+      {
+        title: "App Store",
+        href: "https://apps.apple.com/us/app/crunchyroll-rwby-arrowfell/id6504204194"
+      },
+      {
+        title: "Google Play",
+        href: "https://play.google.com/store/apps/details?id=com.crunchyroll.gv.rwbyarrowfell.game&hl=en_US"
+      }
+    ],
+    time: "2024",
+    type: "WayForward Technologies, Inc.",
+  },
   {
     img: { data: [{ url: RCG }] },
     title: "River City Girls Mobile",
@@ -228,7 +273,7 @@ const items = [
       rowHeight: 24,
       gap: 0,
       data: [
-        { url: spotilize, cols: 12, rows: 12},
+        { url: spotilize, cols: 12, rows: 12 },
         { url: spotilizeJamesBrown, preview: false },
         { url: spotilizeLightMode, preview: false },
       ],
@@ -429,7 +474,7 @@ const items = [
       },
     ],
     type: "Personal Project",
-    date: "2018"
+    date: "2018",
   },
   {
     img: syn,

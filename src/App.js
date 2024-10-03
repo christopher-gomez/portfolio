@@ -33,7 +33,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const fb = initializeApp(firebaseConfig);
 const analytics = getAnalytics(fb);
-console.log(analytics);
+// console.log(analytics);
 
 // const views = [".landing", ".portfolio", ".about"];
 
@@ -87,16 +87,16 @@ const App = () => {
   //   // if (isScrolling.current) checkScroll();
   // };
 
-  const handleResize = () => {
-    setState((state) => ({
-      ...state,
-      drawX: 0,
-      eraseX: 0,
-      isErasing: false,
-      isDrawing: true,
-      forceStickyNav: false,
-    }));
-  };
+  // const handleResize = () => {
+  //   setState((state) => ({
+  //     ...state,
+  //     drawX: 0,
+  //     eraseX: 0,
+  //     isErasing: false,
+  //     isDrawing: true,
+  //     forceStickyNav: false,
+  //   }));
+  // };
 
   const [loaded, setLoaded] = useState(false);
   const [initted, setInitted] = useState(false);
@@ -104,7 +104,7 @@ const App = () => {
 
   useEffect(() => {
     // window.addEventListener("scroll", handleScrollY);
-    window.addEventListener("resize", handleResize);
+    // window.addEventListener("resize", handleResize);
 
     // window.onscroll = function () {
     //   if (isScrolling.current === false) {
@@ -123,7 +123,7 @@ const App = () => {
     // };
 
     // handleScrollY();
-    handleResize();
+    // handleResize();
 
     let timeout;
     timeout = setTimeout(() => {
@@ -133,7 +133,7 @@ const App = () => {
     return () => {
       clearTimeout(timeout);
       // window.removeEventListener("scroll", handleScrollY);
-      window.removeEventListener("resize", handleResize);
+      // window.removeEventListener("resize", handleResize);
 
       // window.onscroll = undefined;
     };
@@ -147,82 +147,103 @@ const App = () => {
     }
   }, [state.contentShowing]);
 
+  // useEffect(() => {
+  //   // console.log("introComplete", introComplete);
+  // }, [introComplete]);
+
   const [canDisplayFractal, setCanDisplayFractal] = useState(false);
 
-  return (
-    <ThemeManager>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          justifyItems: "center",
-          alignItems: "center",
-          alignContent: "center",
-          justifyContent: "center",
-          background: "black",
-          zIndex: 2000,
-          display: initted ? "none" : "flex",
-          opacity: loaded ? 0 : 1,
-          transition: "opacity 1s",
-        }}
-        onTransitionEnd={() => {
-          setInitted(true);
-        }}
-      >
-        <CircularProgress />
-      </Box>
-      <Box
-        sx={{ opacity: 0 }}
-        className={`${canDisplayFractal && introComplete ? "fade-in-intro" : ""}`}
-      >
-        <FractalBg
-          loaded={introComplete}
-          introComplete={introComplete}
-          onSceneCreated={() => {
-            setCanDisplayFractal(true);
-          }}
-          allowZenMode={true}
-          onToggleUI={(showing) => {
-            setState((state) => ({
-              ...state,
-              contentShowing: !showing,
-              bgOpacity: 1,
-              forceStickyNav: showing,
-            }));
-          }}
-        />
-      </Box>
-      <Nav introComplete={introComplete}/>
-      <Transition visible={state.contentShowing}>
-        <Landing
-          {...state}
-          isZenMode={!state.contentShowing}
-          loaded={initted}
-          onIntroComplete={() => {
-            setIntroComplete(true);
+  const [shouldUseWebGL, setShouldUseWebGL] = useState(true);
 
-            // setTimeout(() => {
+  const style = !introComplete
+    ? { maxHeight: "100vh", overflow: "hidden" }
+    : {};
+  return (
+    <div style={style}>
+      <ThemeManager>
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            justifyItems: "center",
+            alignItems: "center",
+            alignContent: "center",
+            justifyContent: "center",
+            background: "black",
+            zIndex: 2000,
+            display: initted ? "none" : "flex",
+            opacity: loaded ? 0 : 1,
+            transition: "opacity 1s",
+          }}
+          onTransitionEnd={() => {
+            setInitted(true);
+          }}
+        >
+          <CircularProgress />
+        </Box>
+        <Box
+          sx={{ opacity: 0 }}
+          className={`${
+            canDisplayFractal && introComplete ? "fade-in-intro" : ""
+          }`}
+        >
+          <FractalBg
+            loaded={introComplete}
+            introComplete={introComplete}
+            onSceneCreated={() => {
+              setCanDisplayFractal(true);
+            }}
+            useWebGL={shouldUseWebGL}
+            allowZenMode={true}
+            onToggleUI={(showing) => {
+              setState((state) => ({
+                ...state,
+                contentShowing: !showing,
+                bgOpacity: 1,
+                forceStickyNav: showing,
+              }));
+            }}
+          />
+        </Box>
+        <Nav introComplete={introComplete} />
+        <Transition visible={state.contentShowing}>
+          <Landing
+            {...state}
+            onRenderChoice={(choice) => {
+              if (choice === "webgl") {
+                setShouldUseWebGL(true);
+              } else {
+                setShouldUseWebGL(false);
+              }
+            }}
+            isZenMode={!state.contentShowing}
+            loaded={initted}
+            onIntroComplete={() => {
+              setIntroComplete(true);
+
+              // setTimeout(() => {
               // setCanDisplayFractal(true);
-            // }, 0);
-          }}
-        />
-        <Portfolio
-          onCardHover={(hovered) => {
-            if (hovered) {
-              document.querySelector(".App").classList.add("hovered");
-            } else {
-              document.querySelector(".App").classList.remove("hovered");
-            }
-          }}
-          setShouldHideNav={setShouldHideNav}
-        />
-        <About />
-        <ScrollTop />
-      </Transition>
-    </ThemeManager>
+              // }, 0);
+            }}
+          />
+          <Portfolio
+            onCardHover={(hovered) => {
+              if (hovered) {
+                document.querySelector(".App").classList.add("hovered");
+              } else {
+                document.querySelector(".App").classList.remove("hovered");
+              }
+            }}
+            setShouldHideNav={setShouldHideNav}
+          />
+          <About />
+          <ScrollTop />
+        </Transition>
+      </ThemeManager>
+    </div>
   );
 };
 
@@ -248,7 +269,11 @@ const Router = () => {
                       justifyContent: "center",
                     }}
                   >
-                    <FractalBg loaded={true} allowZenMode={true} introComplete={true} />
+                    <FractalBg
+                      loaded={true}
+                      allowZenMode={true}
+                      introComplete={true}
+                    />
                   </Box>
                 </ThemeManager>
               }

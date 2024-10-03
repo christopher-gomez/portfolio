@@ -10,19 +10,19 @@ export default ({ title, children, open }) => {
   React.useEffect(() => {
     if (open === undefined) return;
 
-    console.log('effect')
+    // console.log('effect')
     setAnchorEl(open ? buttonEl.current : null);
   }, [open]);
 
   const isOpen = anchorEl !== null;
 
   const handleClick = (e) => {
-    console.log('handle click')
+    // console.log('handle click')
     setAnchorEl(e.currentTarget);
   };
 
   const handleClose = () => {
-    console.log('ok')
+    // console.log('ok')
     setAnchorEl(null);
   };
 

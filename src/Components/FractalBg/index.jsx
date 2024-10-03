@@ -56,8 +56,8 @@ const originalFractalProperties = {
   maxMaxRad: 260,
   minMaxRad: 200,
   webGLColors: [
-    "rgba(255,255,255,.1)",
-    /*"rgba(255,255,255,.2),"*/ "rgba(120,163,211,.3)",
+    "rgba(255,255,255,.15)",
+    /*"rgba(255,255,255,.2),"*/ "rgba(120,163,211,.4)",
   ],
   nonWebGLColors: [
     "rgba(255,255,255,.4)",
@@ -101,6 +101,7 @@ export default (props) => {
     loaded,
     introComplete,
     onSceneCreated,
+    useWebGL,
     ...others
   } = props;
 
@@ -157,6 +158,20 @@ export default (props) => {
   useEffect(() => {
     animationStateRef.current = animationState;
   }, [animationState]);
+
+  useEffect(() => {
+    if (useWebGL) {
+      setAnimationState((state) => ({
+        ...state,
+        useWebGL: true,
+      }));
+    } else {
+      setAnimationState((state) => ({
+        ...state,
+        useWebGL: false,
+      }));
+    }
+  }, [useWebGL]);
 
   const drawCanvas = useRef();
 
@@ -521,6 +536,10 @@ export default (props) => {
   const [canBeginDraw, setCanBeginDraw] = useState(false);
 
   useEffect(() => {
+    if (!animationState.useWebGL) setCanBeginDraw(true);
+  }, [animationState.useWebGL]);
+
+  useEffect(() => {
     // if (!loaded) return;
 
     // console.log("isDrawing changed to ", animationState.isDrawing);
@@ -600,9 +619,9 @@ export default (props) => {
   function init(isErase) {
     // console.log("init");
 
-    console.groupCollapsed("init");
-    console.trace();
-    console.groupEnd();
+    // console.groupCollapsed("init");
+    // console.trace();
+    // console.groupEnd();
 
     if (
       isErase === undefined &&
@@ -734,6 +753,18 @@ export default (props) => {
       if (finalDrawCountElemRef.current)
         finalDrawCountElemRef.current.innerText =
           "Final Draw Count: " + fractal.drawCount;
+
+      if (webGLRenderedRef.current) {
+        setFirstFullRenderComplete(true);
+      }
+
+      setAnimationState((s) => ({
+        ...s,
+        drawCompleted: !isErase,
+        eraseCompleted: isErase,
+        isDrawing: false,
+        isErasing: false,
+      }));
 
       fractal.frameTime = 0;
       fractal.previousDelta = null;
@@ -1233,6 +1264,20 @@ export default (props) => {
   const animDurationElemRef = useRef();
   const finalDrawCountElemRef = useRef();
 
+  const [firstFullRenderComplete, setFirstFullRenderComplete] = useState(false);
+  const [webGLRendered, setWebGLRendered] = useState(false);
+
+  const firstFullRenderCompleteRef = useRef(false);
+  const webGLRenderedRef = useRef(false);
+
+  useEffect(() => {
+    webGLRenderedRef.current = webGLRendered;
+  }, [webGLRendered]);
+
+  useEffect(() => {
+    firstFullRenderCompleteRef.current = firstFullRenderComplete;
+  }, [firstFullRenderComplete]);
+
   const textureRef = useRef();
 
   return (
@@ -1240,7 +1285,10 @@ export default (props) => {
       {allowZenMode && (
         <Backdrop
           open={UIState.active}
-          sx={{ background: "transparent !important" }}
+          sx={{
+            background: "transparent !important",
+            pointerEvents: UIState.active ? "all" : "none",
+          }}
         >
           <div
             className={"blueprint-container"}
@@ -1260,6 +1308,7 @@ export default (props) => {
                   infoFocused: false,
                 }));
               }}
+              onClick={(e) => e.stopPropagation()}
             >
               <div
                 className={`blueprint-header blur-container shadow ${
@@ -1297,7 +1346,7 @@ export default (props) => {
                     >
                       <IconButton
                         size="small"
-                        onClick={() => {
+                        onClick={(e) => {
                           document.body.style.cursor = "none";
 
                           setUIState((state) => ({
@@ -1521,7 +1570,8 @@ export default (props) => {
                   infoFocused: false,
                 }));
               }}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 // if (UIState.infoShowing) {
                 //   setUIState((state) => ({ ...state, infoShowing: false }));
                 //   return;
@@ -1639,7 +1689,8 @@ export default (props) => {
           }}
         >
           <Typography
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setAnimationState((s) => ({ ...s, useWebGL: !s.useWebGL }));
             }}
             sx={{
@@ -1678,32 +1729,6 @@ export default (props) => {
         </Box>
       )}
 
-      {/* {webGLAvailable && !animationState.useWebGL && !UIState.active && (
-        <Typography
-          onClick={() => {
-            setAnimationState((s) => ({ ...s, useWebGL: true }));
-          }}
-          sx={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            color: "white",
-            zIndex: 1000,
-            fontSize: ".65em",
-            color: "white",
-            textDecoration: "underline",
-
-            "&:hover": {
-              cursor: "pointer",
-              textDecoration: "underline",
-              fontWeight: "bold",
-            },
-          }}
-        >
-          Enable WebGL for better visuals.
-        </Typography>
-      )} */}
-
       <div className={bgType ?? "fractal"}>
         <canvas
           ref={drawCanvas}
@@ -1714,10 +1739,13 @@ export default (props) => {
           }}
         />
         <WebGL
+          isDrawing={animationState.isDrawing}
           loaded={introComplete}
           introComplete={introComplete}
           canvas2D={textureRef.current}
           shouldRender={animationState.useWebGL}
+          firstFullRenderComplete={firstFullRenderComplete}
+          drawCompleted={animationState.drawCompleted}
           onSceneCreated={(canvas, renderer) => {
             // drawCanvasElem.current = canvas;
             // console.log("WebGL Scene Created");
@@ -1747,11 +1775,41 @@ export default (props) => {
             if (onSceneCreated) onSceneCreated();
             // drawCanvasElem.current = drawCanvas.current;
           }}
-          redraw={beginErase}
+          redraw={() => {
+            if (!animationStateRef.current.useWebGL) return;
+
+            setWebGLRendered(true);
+            beginErase();
+          }}
           xDriftFactor={fractalPropertiesState.webGL.xDriftFactor}
           yDriftFactor={fractalPropertiesState.webGL.yDriftFactor}
           noiseScale={fractalPropertiesState.webGL.noiseScale}
           distortion={fractalPropertiesState.webGL.distortion}
+          onSetXDriftFactor={(factor) => {
+            setFractalPropertiesState((s) => ({
+              ...s,
+              webGL: { ...s.webGL, xDriftFactor: factor },
+            }));
+          }}
+          onSetYDriftFactor={(factor) => {
+            setFractalPropertiesState((s) => ({
+              ...s,
+              webGL: { ...s.webGL, yDriftFactor: factor },
+            }));
+          }}
+          onSetNoiseScale={(factor) => {
+            console.log("setting noise scale to", factor);
+            setFractalPropertiesState((s) => ({
+              ...s,
+              webGL: { ...s.webGL, noiseScale: factor },
+            }));
+          }}
+          onSetDistortion={(factor) => {
+            setFractalPropertiesState((s) => ({
+              ...s,
+              webGL: { ...s.webGL, distortion: factor },
+            }));
+          }}
           canBurstInteract={canBurstInteract}
           shouldBlur={!canBurstInteract}
         />
@@ -1768,7 +1826,8 @@ export default (props) => {
               ...zenViewerStyle,
               zIndex: 99999,
             }}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (onToggleUI) onToggleUI(true);
               // if (!drawParams.isDrawing) handleResize();
 

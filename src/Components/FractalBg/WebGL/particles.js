@@ -16,12 +16,15 @@ attribute float life;       // Life of the particle
 attribute float permanent;  // Whether the particle is permanent or temporary
 attribute float maxLife;
 
+uniform float uHasBloom;  // Bloom effect flag
+
 varying float vLife;         // Pass life to fragment shader
 varying float vPermanent;    // Pass permanent status to fragment shader
 varying float vMaxLife;      // Maximum life of the particle
 varying float vPhase;
 varying vec3 modPos;
 varying float vDiffColor;
+varying float vHasBloom;
 
 vec4 permute(vec4 x) {
     return mod(((x * 34.0) + 1.0) * x, 289.0);
@@ -135,6 +138,8 @@ void main() {
     vLife = life;
     vPermanent = permanent;  // Pass permanent status
     vMaxLife = maxLife;  // Pass maximum life to the fragment shader
+
+    vHasBloom = uHasBloom;  // Pass bloom effect flag
 
     float timeOffset = uTime * 0.15 + vPhase;
     vec4 posTime = vec4(position, timeOffset * 0.025);
@@ -279,11 +284,21 @@ modPos.z = origZ;  // Ensure no movement in the z-axis
   out vec4 fragColor;
   varying float vLife;  // Life of the particle
   varying float vMaxLife;  // Maximum life of the particle
-varying float vPermanent;  // Permanent status (1.0 = permanent, 0.0 = temporary)
+  varying float vPermanent;  // Permanent status (1.0 = permanent, 0.0 = temporary)
+  varying float vHasBloom;
   
   void main() {
-    float fadeInDuration = 0.0; // Duration of the fade-in effect in seconds
+    float fadeInDuration = 5.0; // Duration of the fade-in effect in seconds
+
+    if(vPermanent == 0.0) {
+        fadeInDuration = 0.0;  // Shorter fade-in for temporary particles
+    }
+
     float maxAlpha = 0.6; // Maximum alpha value
+
+    // if (vHasBloom > 0.0) {
+    //     maxAlpha = 0.5;  // Increase max alpha for particles with bloom
+    // }
   
     // Calculate base alpha based on fade-in time
     float baseAlpha = maxAlpha * clamp(uElapsedTime / fadeInDuration, 0.0, 1.0);
@@ -320,14 +335,17 @@ varying float vPermanent;  // Permanent status (1.0 = permanent, 0.0 = temporary
     }
 
     if(vPermanent == 0.0) {
-  float fadeOutDuration = 1.0; // Duration of the fade-out effect in seconds
-if (vLife >= vMaxLife - fadeOutDuration) {
-    // Start fading out the particle in the last 1 second of its life
-    float lifeRemaining = clamp(1.0 - (vLife - (vMaxLife - fadeOutDuration)) / fadeOutDuration, 0.0, 1.0);
-    alpha *= lifeRemaining;
-}
+      float fadeOutDuration = 1.0; // Duration of the fade-out effect in seconds
+      if (vLife >= vMaxLife - fadeOutDuration) {
+        // Start fading out the particle in the last 1 second of its life
+        float lifeRemaining = clamp(1.0 - (vLife - (vMaxLife - fadeOutDuration)) / fadeOutDuration, 0.0, 1.0);
+        alpha *= lifeRemaining;
+      }
     }
-  
-    fragColor = vec4(texColor.rgb, texColor.a * alpha * alphaGradient);
+
+
+    float finalAlpha = texColor.a * alpha * alphaGradient;
+
+    fragColor = vec4(texColor.rgb, finalAlpha);
   }
   `;
