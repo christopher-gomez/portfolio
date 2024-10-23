@@ -3,8 +3,10 @@ import "../../styles/CSS/Nav.css";
 import { toElement as scrollToElement } from "../../util/scroll";
 import ScrollButton from "../ScrollButton";
 import { useIntersectionObserver } from "../../util/IntersectionObserver";
+import { IconButton } from "@mui/material";
+import { Close } from "@mui/icons-material";
 
-export default ({ introComplete }) => {
+export default ({ introComplete, modalOpen, onSetModalClosed }) => {
   const nav = useRef();
 
   const introRef = useRef();
@@ -13,14 +15,21 @@ export default ({ introComplete }) => {
   const introCompleteRef = useRef(false);
 
   useEffect(() => {
+    isVisible.current = false;
+  }, [modalOpen]);
+
+  useEffect(() => {
     introCompleteRef.current = introComplete;
   }, [introComplete]);
+
+  const isVisible = useRef(false);
 
   const handleVisible = () => {
     if (!nav.current) return;
 
     nav.current.classList.remove("fade-in-top");
     nav.current.classList.add("fade-out-top-nav");
+    isVisible.current = true;
   };
 
   const handleHidden = () => {
@@ -30,6 +39,7 @@ export default ({ introComplete }) => {
     nav.current.classList.add("scrolled");
     nav.current.classList.add("sticky");
     nav.current.classList.add("fade-in-top");
+    isVisible.current = false;
   };
 
   useIntersectionObserver(
@@ -63,9 +73,9 @@ export default ({ introComplete }) => {
     <header>
       <nav
         role="navigation"
-        className={`nav js-scroll nav-start`}
+        className={`nav js-scroll nav-start ${modalOpen ? "modal-open" : ""}`}
         onAnimationEnd={() => {
-          if(nav.current) {
+          if (nav.current) {
             nav.current.classList.remove("nav-start");
           }
         }}
@@ -78,8 +88,23 @@ export default ({ introComplete }) => {
           <p>Christopher Gomez</p>
         </div>
         <div className="menu">
-          <ScrollButton scrollTarget=".portfolio">Portfolio</ScrollButton>
-          <ScrollButton scrollTarget=".about">About</ScrollButton>
+          {modalOpen ? (
+            <>
+              <IconButton
+                onClick={() => {
+                  onSetModalClosed();
+                }}
+                sx={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+              >
+                <Close sx={{ color: "white !important" }} />
+              </IconButton>
+            </>
+          ) : (
+            <>
+              <ScrollButton scrollTarget=".portfolio">Portfolio</ScrollButton>
+              <ScrollButton scrollTarget=".about">About</ScrollButton>
+            </>
+          )}
         </div>
       </nav>
     </header>

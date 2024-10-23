@@ -93,7 +93,6 @@ export default (props) => {
     onFractalPosition,
     bgOpacity,
     bgBlur,
-    toggleRandomTheme,
     allowZenMode,
     onToggleUI,
     onFadeOutBegin,
@@ -419,12 +418,16 @@ export default (props) => {
   useIntersectionObserver(
     introRef,
     () => {
+      if (canBurstInteractRef.current) return;
+
       if (document.querySelector("#zen-viewer"))
         document.querySelector("#zen-viewer").style.display = "block";
 
       setCanBurstInteract(true);
     },
     () => {
+      if (!canBurstInteractRef.current) return;
+
       if (document.querySelector("#zen-viewer"))
         document.querySelector("#zen-viewer").style.display = "none";
 

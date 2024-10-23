@@ -5,13 +5,19 @@ import { hexToRgb } from "../../util/color";
 import Backdrop from "../Backdrop";
 import { createContainer } from "react-tracked";
 import Link from "../Link";
-import { IconButton, ImageListItem, ImageList } from "@mui/material";
+import { IconButton, ImageListItem, ImageList, Tooltip } from "@mui/material";
 import FontAwesomeTextIcon from "../FontAwesomeTextIcon";
 import {
   faDownLeftAndUpRightToCenter,
   faUpRightAndDownLeftFromCenter,
 } from "@fortawesome/free-solid-svg-icons";
-import { ArrowBack, ArrowForward } from "@mui/icons-material";
+import {
+  ArrowBack,
+  ArrowBackIos,
+  ArrowForward,
+  ArrowForwardIos,
+  Forward,
+} from "@mui/icons-material";
 import { useIntersectionObserver } from "../../util/IntersectionObserver";
 
 // const useValue = () =>
@@ -33,7 +39,12 @@ function srcset(image, size, rows = 1, cols = 1) {
   };
 }
 
-export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
+export const ImageGrid = ({
+  images,
+  layout = "condensed",
+  onClick,
+  children,
+}) => {
   const [gridProps, setGridProps] = useState({
     cols: 1,
     rowHeight: 50,
@@ -60,6 +71,32 @@ export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
   }, [images]);
 
   const [curImage, setCurImage] = useState(-1);
+
+  useEffect(() => {
+    if (layout === "modal") {
+      setCurImage(0);
+    }
+  }, [layout]);
+  const imgContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (!imgContainerRef.current || images == undefined) return;
+
+    const imageList = Array.isArray(images)
+      ? images
+      : "data" in images
+      ? images.data
+      : [];
+
+    var img =
+      typeof imageList[imageList.length > 1 ? curImage : 0] === "string"
+        ? imageList[imageList.length > 1 ? curImage : 0]
+        : imageList[imageList.length > 1 ? curImage : 0].url;
+
+    if (img === undefined) return;
+
+    imgContainerRef.current.style.setProperty("--image-url", `url(${img})`);
+  }, [curImage, imgContainerRef.current, images]);
 
   if (!images) return null;
 
@@ -95,6 +132,7 @@ export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
           {layout === "modal" && (
             <div className="img-caro-buttons">
               <IconButton
+                sx={{ background: "rgba(0,0,0,0.5)" }}
                 onClick={() =>
                   setCurImage((cur) => {
                     if (cur === -1) return imageList.length - 1;
@@ -105,10 +143,14 @@ export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
                 <ArrowBack />
               </IconButton>
               <IconButton
+                sx={{ background: "rgba(0,0,0,0.5)" }}
                 onClick={() => {
                   setCurImage((cur) => {
-                    if (cur === imageList.length - 1) return -1;
-                    else return cur + 1;
+                    if (cur === imageList.length - 1) {
+                      if (layout === "modal") return 0;
+
+                      return -1;
+                    } else return cur + 1;
                   });
                 }}
               >
@@ -154,6 +196,7 @@ export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
             }
           })}
         </ImageList>
+        {children}
       </div>
     );
   else {
@@ -166,10 +209,12 @@ export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
         onClick={() => {
           if (onClick) onClick();
         }}
+        ref={imgContainerRef}
       >
         {layout === "modal" && imageList.length > 1 && (
           <div className="img-caro-buttons">
             <IconButton
+              sx={{ background: "rgba(0,0,0,0.5)" }}
               onClick={() =>
                 setCurImage((cur) => {
                   if (cur === -1) return imageList.length - 1;
@@ -180,10 +225,14 @@ export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
               <ArrowBack />
             </IconButton>
             <IconButton
+              sx={{ background: "rgba(0,0,0,0.5)" }}
               onClick={() => {
                 setCurImage((cur) => {
-                  if (cur === imageList.length - 1) return -1;
-                  else return cur + 1;
+                  if (cur === imageList.length - 1) {
+                    if (layout === "modal") return 0;
+
+                    return -1;
+                  } else return cur + 1;
                 });
               }}
             >
@@ -206,6 +255,7 @@ export const ImageGrid = ({ images, layout = "condensed", onClick }) => {
                 : "1em 1em 0 0",
           }}
         />
+        {children}
       </div>
     );
   }
@@ -215,28 +265,26 @@ const PortfolioItem = ({
   item,
   onShowMore,
   isModal,
-  allowDyanimicExpansion: allowDynamicExpansion = true,
+  allowDynamicExpansion = true,
   onHover,
-  isBlurred,
+  // isBlurred,
   isCondensed,
-  modalOpen,
-  allowHoverFocus,
+  onNavigate,
+  items,
   ...others
 }) => {
   const [state, setState] = useState({
-    overflowed: false,
-    hovered: false,
-    animating: false,
     isCondensed: false,
   });
 
-  // const [globalState, setGlobalState] = useTracked();
+  const [overflowed, setOverflowed] = useState(false);
 
   const entireElem = useRef();
   const descriptionElem = useRef();
   const titleElem = useRef();
   const textContainerElem = useRef();
-  const hoverDelay = useRef();
+
+  const shouldHandleOverflow = useRef(true);
 
   function checkMulti() {
     if (!titleElem.current) return;
@@ -256,25 +304,19 @@ const PortfolioItem = ({
     return multi;
   }
 
-  useEffect(() => {
-    // window.addEventListener("resize", handleTextOverflow);
-    // return () => {
-    //   window.removeEventListener("resize", handleTextOverflow);
-    //   clearTimeout(hoverDelay.current);
-    // };
-  }, []);
-
   const handleTextOverflow = () => {
+    if (isModal || !item) return;
+
     if (titleElem.current) {
       if (state.isCondensed) {
-        // descriptionElem.current.style.webkitLineClamp = 2;
-        // descriptionElem.current.style.lineClamp = 2;
+        descriptionElem.current.style.webkitLineClamp = 3;
+        descriptionElem.current.style.lineClamp = 3;
       } else if (checkMulti()) {
         descriptionElem.current.style.webkitLineClamp = 4;
         descriptionElem.current.style.lineClamp = 4;
       } else {
-        // descriptionElem.current.style.webkitLineClamp = 6;
-        // descriptionElem.current.style.lineClamp = 6;
+        descriptionElem.current.style.webkitLineClamp = 3;
+        descriptionElem.current.style.lineClamp = 3;
       }
     }
 
@@ -283,97 +325,39 @@ const PortfolioItem = ({
       descriptionElem.current.scrollHeight >
         descriptionElem.current.clientHeight
     ) {
-      setState({ ...state, overflowed: true });
+      setOverflowed(true);
+    } else {
+      setOverflowed(false);
     }
+
+    shouldHandleOverflow.current = false;
   };
 
-  const timeout = useRef();
-
   useEffect(() => {
-    if (
-      item !== undefined &&
-      item !== null &&
-      item.description !== undefined &&
-      descriptionElem.current
-    ) {
-      clearTimeout(timeout.current);
-
-      timeout.current = setTimeout(() => {
-        handleTextOverflow();
-      }, 500);
-    }
-
-    return () => {
-      clearTimeout(timeout.current);
-    };
-  }, [item, state.isCondensed]);
-
-  const shouldCondense = useRef(false);
-  const shouldExpand = useRef(false);
-
-  useEffect(() => {
-    if (!entireElem.current) {
-      setState((s) => ({ ...s, isCondensed: isCondensed }));
+    if (isModal) {
       return;
     }
 
-    if (isCondensed !== state.isCondensed) {
-      shouldCondense.current = false;
-      shouldExpand.current = false;
-      // entireElem.current.classList.remove("fade-in-grow");
-      // entireElem.current.classList.remove("fade-out-shrink");
-
-      shouldCondense.current = isCondensed;
-      shouldExpand.current = !isCondensed;
-      // animate out
-      // entireElem.current.classList.add("fade-out-shrink");
-
-      setState((s) => ({ ...s, isCondensed: isCondensed }));
-      // wait for anim and set the in elem on anim end
-    }
-  }, [isCondensed]);
-
-  useEffect(() => {
     if (!entireElem.current) {
       return;
     }
 
-    if (!state.animating) {
-      entireElem.current.classList.remove("fade-out-shrink");
-      if (shouldCondense.current || shouldExpand.current) {
-        shouldCondense.current = false;
-        shouldExpand.current = false;
-      } else {
-        entireElem.current.classList.remove("fade-in-grow");
-      }
-    }
-  }, [state.animating]);
-
-  useEffect(() => {
-    if (!entireElem.current) {
-      return;
-    }
-
-    // entireElem.current.classList.add("fade-in-grow");
     entireElem.current.classList.remove("hidden-y-scale");
 
     if (state.isCondensed) {
       entireElem.current.classList.add("condensed");
-      // textContainerElem.current.classList.add("text-wrapper");
     } else {
       entireElem.current.classList.remove("condensed");
-      // textContainerElem.current.classList.remove("text-wrapper");
     }
-  }, [state.isCondensed]);
+  }, [state.isCondensed, entireElem.current, item]);
 
   useEffect(() => {
-    if (allowHoverFocus !== undefined && !allowHoverFocus && state.hovered)
-      setState((s) => ({ ...s, hovered: false }));
-  }, [allowHoverFocus]);
+    if (item === undefined || item === null) return;
 
-  useIntersectionObserver(entireElem, handleTextOverflow, () => {}, .5);
+    setState((s) => ({ ...s, isCondensed: isCondensed }));
+  }, [isCondensed]);
 
-  const [curImage, setCurImage] = useState(0);
+  useIntersectionObserver(entireElem, handleTextOverflow, () => {}, 0.25);
 
   if (item === undefined || item === null) return null;
 
@@ -399,7 +383,50 @@ const PortfolioItem = ({
             />
           </IconButton>
         )}
+        {isModal && item && items && (
+          <div className="portfolio-item__nav">
+            <Tooltip title="Previous Project">
+              <IconButton
+                onClick={() => {
+                  onNavigate(-1);
+                }}
+                disabled={items.indexOf(item) === 0}
+                sx={{
+                  "&.Mui-disabled": {
+                    color: "gray", // Color when disabled
+                    opacity: 0.5, // Optional: Adjust opacity to give a more "disabled" look
+                  },
+                }}
+              >
+                <ArrowBackIos sx={{ color: "white" }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Next Project">
+              <IconButton
+                onClick={() => {
+                  onNavigate(1);
+                }}
+                disabled={items.indexOf(item) === items.length - 1}
+                sx={{
+                  "&.Mui-disabled": {
+                    color: "gray", // Color when disabled
+                    opacity: 0.5, // Optional: Adjust opacity to give a more "disabled" look
+                  },
+                }}
+              >
+                <ArrowForwardIos sx={{ color: "white" }} />
+              </IconButton>
+            </Tooltip>
+          </div>
+        )}
       </div>
+      {isModal && item.type && item.time && (
+        <div className="portfolio-item__info">
+          <p>{item.type}</p>
+          <p style={{ margin: "0 .25em" }}> - </p>
+          <p>{item.time}</p>
+        </div>
+      )}
       <div className="wrapper">
         <div
           className={
@@ -415,16 +442,16 @@ const PortfolioItem = ({
           <div
             style={{
               display: "inline-flex",
-              pointerEvents: state.overflowed ? "auto" : "none",
+              pointerEvents: overflowed ? "auto" : "none",
             }}
           >
             <div
               className="desc_show_more"
               onClick={() => onShowMore(item)}
               style={{
-                opacity: state.overflowed ? 1 : 0,
-                pointerEvents: state.overflowed ? "auto" : "none",
-                display: state.overflowed ? "block" : "none",
+                opacity: overflowed ? 1 : 0,
+                pointerEvents: overflowed ? "auto" : "none",
+                display: overflowed ? "block" : "none",
               }}
             >
               More...
@@ -432,7 +459,7 @@ const PortfolioItem = ({
           </div>
         )}
       </div>
-      {item.icons && (
+      {item.icons && item.icons.length > 0 && (
         <div
           className="portfolio-item__icon"
           style={{
@@ -460,7 +487,7 @@ const PortfolioItem = ({
           })}
         </div>
       )}
-      {item.links && (
+      {item.links && item.links.length > 0 && (
         <div className="portfolio-item__links">
           {item.links.map((link, i) => {
             return (
@@ -480,51 +507,19 @@ const PortfolioItem = ({
         ref={entireElem}
         onClick={(e) => e.stopPropagation()}
         className={"portfolio-item" + (isModal ? " modal" : "") + " noselect"}
-        // onPointerEnter={(e) => {
-        //   if (
-        //     isModal ||
-        //     // state.animating ||
-        //     (allowHoverFocus !== undefined && !allowHoverFocus)
-        //   )
-        //     return;
-
-        //   clearTimeout(hoverDelay.current);
-
-        //   hoverDelay.current = setTimeout(() => {
-        //     if (onHover) onHover(true);
-        //     setState((s) => ({ ...s, hovered: true }));
-        //   }, 0);
-        // }}
-        // onPointerLeave={() => {
-        //   if (
-        //     isModal ||
-        //     (allowHoverFocus !== undefined && !allowHoverFocus)
-        //   )
-        //     return;
-
-        //   if (onHover) onHover(false);
-        //   // setGlobalState((s) => ({ ...s, isAnyHovered: false }));
-
-        //   clearTimeout(hoverDelay.current);
-        //   setState((s) => ({ ...s, hovered: false }));
-        // }}
         {...others}
-        // onAnimationStart={() => {
-        //   console.log('animating')
-        //   setState((s) => ({ ...s, animating: true }));
-        // }}
-        // onAnimationEnd={() => {
-        //   setState((s) => ({ ...s, animating: false }));
-        // }}
-        style={
-          isBlurred
-            ? {
-                opacity: 0.9,
-                // transform: `scale(.95,.95)`,
-                transition: "all .1s ease-in-out",
-              }
-            : {}
-        }
+        // style={
+        //   isBlurred
+        //     ? {
+        //         opacity: 0.9,
+        //         transition: "all .1s ease-in-out",
+        //       }
+        //     : {}
+        // }
+
+        onPointerEnter={() => {
+          if (onHover) onHover(item);
+        }}
       >
         {item.img && (
           <>
@@ -545,7 +540,7 @@ const PortfolioItem = ({
                 onClick={() => {
                   onShowMore(item);
                 }}
-                className="portfolio-item__img"
+                className={`portfolio-item__img ${isModal ? "modal" : ""}`}
                 style={{
                   backgroundImage: `url(${item.img})`,
                   cursor: isModal ? "default" : "pointer",
@@ -566,19 +561,12 @@ const PortfolioItem = ({
             <>{textElem}</>
           )}
         </div>
-        {/* <div
-          className="blur"
-          style={{
-            opacity: isBlurred ? 1 : 0,
-            backgroundColor: "rgba(0,0,0,.1)",
-          }}
-        ></div> */}
       </div>
     </>
   );
 };
 
-export const ModalPortfolioItem = ({ item, open, handleClose, color }) => {
+export const ModalPortfolioItem = ({ item, open, onNavigate, items }) => {
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "scroll";
@@ -587,29 +575,24 @@ export const ModalPortfolioItem = ({ item, open, handleClose, color }) => {
       document.body.style.overflow = "scroll";
     };
   }, [open]);
-  const { r, g, b } = hexToRgb(color.textColor);
+
+  // const { r, g, b } = hexToRgb(color.textColor);
   return (
     <Backdrop
       sx={{
-        color: "#fff",
         zIndex: (theme) => theme.zIndex.drawer + 2,
-        backgroundColor: `rgba(0,0,0,.5)`,
-        backdropFilter: "blur(10px)",
-        padding: "1em !important",
+        backgroundColor: "rgba(0,0,0,.5) !important",
       }}
-      open={open}
-      onClick={handleClose}
+      className={"portfolio-item-modal-backdrop"}
+      open={open && item !== undefined}
+      // onClick={handleClose}
     >
-      {/* <Backdrop
-        sx={{
-          color: "#fff",
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: `rgba(0,0,0,.75)`,
-        }}
-        open={true}
-      > */}
-      <PortfolioItem item={item} isModal={true} />
-      {/* </Backdrop> */}
+      <PortfolioItem
+        item={item}
+        isModal={true}
+        onNavigate={onNavigate}
+        items={items}
+      />
     </Backdrop>
   );
 };

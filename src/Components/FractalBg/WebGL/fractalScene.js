@@ -73,7 +73,7 @@ var INITIAL_FRACTAL_UNIFORM_TRANSITION_STATE = {
     start: 0.1,
     state: "idle",
     currentTime: 0,
-    unblurredDuration: .25,
+    unblurredDuration: 0.25,
     blurredDuration: 0.25,
     EASE_TYPE: "linear",
     BLURRED_TARGET: 0.01,
@@ -87,7 +87,7 @@ var INITIAL_FRACTAL_UNIFORM_TRANSITION_STATE = {
     start: 0.05,
     state: "idle",
     currentTime: 0,
-    unblurredDuration: .25,
+    unblurredDuration: 0.25,
     blurredDuration: 0.25,
     EASE_TYPE: "linear",
     BLURRED_TARGET: 0.01,
@@ -182,7 +182,7 @@ export default class Scene {
 
   shouldHideBloomTargetsOnFinalComposition = true;
 
-  writeDebug = process.env.NODE_ENV === "development";
+  writeDebug = /*process.env.NODE_ENV === "development"*/ false;
 
   /**
    *
@@ -808,7 +808,7 @@ export default class Scene {
 
   _updateFractalMaterialUniforms(realWorldDeltaSeconds) {
     return;
-    
+
     let debugStr = "Fractal Noise Distortion<br>";
 
     for (const prop in this.fractalUniformTransitionState) {
@@ -832,7 +832,8 @@ export default class Scene {
 
         if (prop === "distortion") {
           this.fractalUniformTransitionState[prop].start =
-          this.fractalUniformTransitionState[prop].current * this.fractalUniformTransitionState[prop].factor;
+            this.fractalUniformTransitionState[prop].current *
+            this.fractalUniformTransitionState[prop].factor;
           this.fractalUniformTransitionState[prop].factor = this.shouldBlur
             ? 1
             : 0;
@@ -1145,18 +1146,11 @@ export default class Scene {
             1.0
           );
 
-          // Calculate the alpha based on time (from 1 to 0 over 1 second)
-          if (
-            this.blurEffectState.flashTime <= this.blurEffectState.flashDuration
-          ) {
-            // Apply quadratic ease-in for smoother start
-            const easedProgress = 1 - (1 - timeProgress) * (1 - timeProgress);
+          // Apply quadratic ease-in for smoother start
+          const easedProgress = 1 - (1 - timeProgress) * (1 - timeProgress);
 
-            // Set the alpha to smoothly ease in from 1 to 0
-            this.flashPass.uniforms.flashAlpha.value = 1 - easedProgress;
-          } else {
-            this.flashPass.uniforms.flashAlpha.value = 0.0; // After 1 second, alpha is 0
-          }
+          // Set the alpha to smoothly ease in from 1 to 0
+          this.flashPass.uniforms.flashAlpha.value = 0.85 - easedProgress;
         } else {
           // Reset flash time and alpha when shouldBlur is false
           this.blurEffectState.flashTime = 0;

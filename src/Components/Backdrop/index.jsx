@@ -21,7 +21,7 @@ export default (props) => {
   // );
 
   return (
-    <Backdrop sx={{ ..._style }} open={open} {...others}>
+    <Backdrop sx={{ ..._style }} open={open} {...others} transitionDuration={1000} >
       {children}
     </Backdrop>
   );

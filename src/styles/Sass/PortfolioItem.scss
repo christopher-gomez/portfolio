@@ -2,11 +2,10 @@
   display: flex;
   flex-direction: column;
   border-radius: 1em;
-  // box-shadow: .75em .75em .5em rgba(0, 0, 0, 0.25), 1em 1em 3em rgba(0, 0, 0, 0.1);
   transition: all .5s ease-in-out;
   background-color: #2c303baf;
   backdrop-filter: blur(10px);
-  
+
   color: var(--alt-text);
   font-weight: 200;
   z-index: 2;
@@ -45,20 +44,71 @@
 
   &.modal {
     box-shadow: none;
-    min-width: 50vw;
-    background-color: #2c303b;
+    min-width: 100%;
+    min-height: 100vh;
+    margin: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none !important;
+
+    .body-wrapper {
+      background-color: #2c303b !important;
+      padding: 20px;
+      border-radius: 2em 2em 0 0;
+      z-index: 4;
+      // flex-grow: unset;
+      flex: 0;
+      box-shadow: 0px -.5px 20px 5px rgb(0, 0, 0);
+      -webkit-box-shadow: 0px -.5px 20px 5px rgb(0, 0, 0);
+      -moz-box-shadow: 0px -.5px 20px 5px rgb(0, 0, 0);
+    }
+
+    .portfolio-item__icon {
+      padding-bottom: 0 !important;
+    }
+
+    .wrapper {
+      padding-bottom: 0 !important;
+    }
 
     &:hover {
       box-shadow: none;
       transform: none;
     }
-  }
 
-  @media (max-width: 450px) {
-    &.modal {
-      min-width: 75vw !important;
+    .portfolio-item__info {
+      display: flex;
+      flex-direction: row;
+      padding: .25em 1.1em;
+      // justify-content: space-between;
+      font-size: 17px;
+      font-weight: 200;
+      color: rgb(222, 222, 222);
+      // transform: skewX(-10deg);
+      /* Slightly skews the text */
+      text-shadow:
+        1px 1px 2px rgba(0, 0, 0, 0.5),
+        /* Dark shadow to create depth */
+        -1px -1px 2px rgba(222, 222, 222, 1);
+      /* Light shadow to simulate highlights */
+      letter-spacing: 1px;
+      /* Slightly increase letter spacing for clarity */
+    }
+
+    .portfolio-item__title {
+      padding-bottom: 0 !important;
     }
   }
+
+  // @media (max-width: 450px) {
+  //   &.modal {
+  //     min-width: 75vw !important;
+  //   }
+  // }
 
   &:hover {
     // box-shadow: .75em .75em .5em rgba(255, 255, 255, 0.1), 1em 1em 3em rgba(255, 255, 255, 0.1);
@@ -74,8 +124,6 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-
-
     font-size: 26px;
     padding: 5px 15px;
     padding-top: 20px;
@@ -83,11 +131,15 @@
     text-align: left;
     text-align: start;
     color: rgba(255, 255, 255, 0.936);
-    transform: skewX(-5deg); /* Slightly skews the text */
+    transform: skewX(-5deg);
+    /* Slightly skews the text */
     text-shadow:
-    1px 1px 2px rgba(0, 0, 0, 0.5),    /* Dark shadow to create depth */
-    -1px -1px 2px rgba(255, 255, 255, 1); /* Light shadow to simulate highlights */
-    letter-spacing: 1px;  /* Slightly increase letter spacing for clarity */
+      1px 1px 2px rgba(0, 0, 0, 0.5),
+      /* Dark shadow to create depth */
+      -1px -1px 2px rgba(255, 255, 255, 1);
+    /* Light shadow to simulate highlights */
+    letter-spacing: 1px;
+    /* Slightly increase letter spacing for clarity */
   }
 
   &.modal .portfolio-item__title {
@@ -103,30 +155,58 @@
     border-radius: 1em 1em 0px 0px;
 
     &.modal {
+      z-index: 1;
       width: 100%;
-      /* Set the width of the container */
-      height: 35vh;
-      /* Set the height of the container */
-      position: relative;
+      min-height: 50vh;
       display: flex;
+      flex-flow: row;
       justify-content: center;
-      /* Center the image horizontally */
-      align-items: center;
-      /* Center the image vertically */
+      align-items: start;
       overflow: hidden;
-      /* Ensure the image doesn't spill out of the container */
-      background-color: rgba(0,0,0,1);
+      background-color: rgba(0, 0, 0, 1);
       transition: none !important;
+      overflow: hidden;
+      object-fit: cover;
+      position: relative;
+      border-radius: 0 !important;
+      flex: 1;
+      box-shadow: none !important;
 
       >img {
+        min-height: 100%;
         max-width: 100%;
         /* Maximum width is the width of the container */
         max-height: 100%;
         /* Maximum height is the height of the container */
         height: auto;
-        /* Maintain aspect ratio */
         width: auto;
-        /* Maintain aspect ratio */
+        object-fit: cover;
+        overflow: hidden;
+        position: absolute;
+        z-index: 2;
+        border-radius: 1em;
+        box-shadow: none !important;
+      }
+
+      /* Blurred background using ::before */
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: var(--image-url);
+        /* Use the dynamic image URL here */
+        background-size: cover;
+        background-position: center;
+        filter: blur(15px);
+        /* Apply blur */
+        z-index: 1;
+        /* Ensure it is behind the image */
+        // transform: scale(1.2);
+        /* Slight scale-up to avoid gaps */
+        box-shadow: none !important;
       }
     }
   }
@@ -254,9 +334,10 @@
     position: absolute;
     display: flex;
     flex-direction: row;
-    z-index: 1;
+    z-index: 5;
     flex: 1;
     margin: auto;
+    padding: 0 2em;
     justify-content: space-between;
     align-items: center;
     justify-items: center;
@@ -325,13 +406,20 @@
 
         >img {
           border-radius: 1em 0 0 1em !important;
-          width: 100%;  /* Make the image fill the width */
-          height: 100%; /* Make the image fill the height */
-          object-fit: cover; /* This does the magic */
-          position: absolute; /* Absolute position to allow it to be bigger than the container and still be centered */
-          top: 50%;  /* Center vertically */
-          left: 50%; /* Center horizontally */
-          transform: translate(-50%, -50%); /* Align the center of the image with the center of the div */
+          width: 100%;
+          /* Make the image fill the width */
+          height: 100%;
+          /* Make the image fill the height */
+          object-fit: cover;
+          /* This does the magic */
+          position: absolute;
+          /* Absolute position to allow it to be bigger than the container and still be centered */
+          top: 50%;
+          /* Center vertically */
+          left: 50%;
+          /* Center horizontally */
+          transform: translate(-50%, -50%);
+          /* Align the center of the image with the center of the div */
         }
       }
     }
@@ -362,7 +450,6 @@
       }
     }
 
-    // box-shadow: .75em .75em .5em rgba(0, 0, 0, 0.25), 1em 1em 3em rgba(0, 0, 0, 0.1);
     .portfolio-item__icon {
       font-size: 1em;
       padding: 0;
@@ -380,4 +467,15 @@
       display: block;
     }
   }
+}
+
+.portfolio-item-modal-backdrop {
+  // background: rgba(0,0,0,1) !important;
+  display: flex;
+  flex-direction: row;
+  align-items: end !important;
+  justify-content: end !important;
+  justify-items: end !important;
+  align-content: end !important;
+  min-height: 100vh;
 }

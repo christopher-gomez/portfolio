@@ -13,7 +13,7 @@ import {
   faDocker,
   faGoogle,
   faAndroid,
-  faApple
+  faApple,
 } from "@fortawesome/free-brands-svg-icons";
 import { faGamepad, faMobile } from "@fortawesome/free-solid-svg-icons";
 import syn from "../../Assets/images/syn_orange.png";
@@ -44,22 +44,26 @@ import TravelMap3 from "../../Assets/images/travel_map_mobile.png";
 import spotilizeLightMode from "../../Assets/images/spotilize.png";
 import spotilizeJamesBrown from "../../Assets/images/spotilize_v2_jamesbrown.png";
 import RWBY from "../../Assets/images/RWBY.png";
+import RCG2 from "../../Assets/images/rcg2-icon.png";
 
 const items = [
   {
-    img: { data: [{ url: RWBY }] },
-    title: "RWBY: Arrowfell",
+    img: { data: [{ url: RCG2 }] },
+    title: "Crunchyroll: River City Girls 2",
     description:
-      "I worked on the development of the mobile port for RWBY: Arrowfell on CrunchyRoll, focusing on optimizing gameplay for touch interfaces, implementing smooth scrolling mechanics, and refining UI interactions to create a seamless player experience across mobile devices." +
-      "I played a key role in the development of the RWBY: Arrowfell CrunchyRoll mobile port, adapting the game for touch-based controls and ensuring an intuitive user experience. This included reworking input systems to support touch gestures, fine-tuning UI elements for mobile screens, and optimizing performance for various devices. I also contributed to gameplay improvements, implementing smooth scrolling and interaction mechanics to maintain the quality of the original game on mobile platforms. My work ensured a seamless transition from console to mobile, preserving the game's core experience for a new audience.",
+      "The sequel to Crunchyroll: River City Girls, Crunchyroll: River City Girls 2 is the latest release I've recently worked on. While simultaneously leading and working on a large update for the original game, I was also tasked with porting many of the mobile features and improvements to the sequel. Having completed two other ports of our console brawlers to mobile for our client, I was able to leverage my experience to quickly and efficiently port the sequel to mobile. I worked on the project as a full stack programmer, integrating the Crunchyroll SDK, and implementing mobile UI and UX changes. The game is currently in it's final days of testing and slated to release in November 2024.",
     icons: [
       {
-        type: "fizz",
-        icon: "icon-csharp",
+        type: "font-awesome",
+        icon: faGamepad,
       },
       {
         type: "font-awesome",
         icon: faUnity,
+      },
+      {
+        type: "fizz",
+        icon: "icon-csharp",
       },
       {
         type: "font-awesome",
@@ -73,30 +77,25 @@ const items = [
         type: "font-awesome",
         icon: faApple,
       },
-
     ],
-    links: [
-      {
-        title: "App Store",
-        href: "https://apps.apple.com/us/app/crunchyroll-rwby-arrowfell/id6504204194"
-      },
-      {
-        title: "Google Play",
-        href: "https://play.google.com/store/apps/details?id=com.crunchyroll.gv.rwbyarrowfell.game&hl=en_US"
-      }
-    ],
+    links: [],
     time: "2024",
     type: "WayForward Technologies, Inc.",
   },
   {
-    img: { data: [{ url: RCG }] },
-    title: "River City Girls Mobile",
+    img: { data: [{ url: RWBY }] },
+    title: "Crunchyroll RWBY: Arrowfell",
     description:
-      "A mobile port of the popular River City Girls game. I worked on the project as a network programmer, integrating CrunchyRoll API calls. I am currently working on porting the sequel to mobile as well.",
+      "I worked on the development of the mobile port for RWBY: Arrowfell on CrunchyRoll, focusing on optimizing gameplay for touch interfaces, implementing smooth scrolling mechanics, and refining UI interactions to create a seamless player experience across mobile devices." +
+      "I played a key role in the development of the RWBY: Arrowfell CrunchyRoll mobile port, adapting the game for touch-based controls and ensuring an intuitive user experience. This included reworking input systems to support touch gestures, fine-tuning UI elements for mobile screens, and optimizing performance for various devices. I also contributed to gameplay improvements, implementing smooth scrolling and interaction mechanics to maintain the quality of the original game on mobile platforms. My work ensured a seamless transition from console to mobile, preserving the game's core experience for a new audience.",
     icons: [
       {
         type: "font-awesome",
         icon: faGamepad,
+      },
+      {
+        type: "font-awesome",
+        icon: faUnity,
       },
       {
         type: "fizz",
@@ -104,7 +103,59 @@ const items = [
       },
       {
         type: "font-awesome",
+        icon: faMobile,
+      },
+      {
+        type: "font-awesome",
+        icon: faAndroid,
+      },
+      {
+        type: "font-awesome",
+        icon: faApple,
+      },
+    ],
+    links: [
+      {
+        title: "App Store",
+        href: "https://apps.apple.com/us/app/crunchyroll-rwby-arrowfell/id6504204194",
+      },
+      {
+        title: "Google Play",
+        href: "https://play.google.com/store/apps/details?id=com.crunchyroll.gv.rwbyarrowfell.game&hl=en_US",
+      },
+    ],
+    time: "2024",
+    type: "WayForward Technologies, Inc.",
+  },
+  {
+    img: { data: [{ url: RCG }] },
+    title: "Crunchyroll: River City Girls Mobile",
+    description:
+      "A mobile port of the popular River City Girls brawler on all major consoles. Over the past quarter, I was tasked with maintaining the mobile applications, partly due to Google PlayStore security and policy updates. I worked on the project as a full stack programmer; integrating updates to the Crunchyroll SDK, updating Unity editor, plugin, and library versions, and implementing mobile UI and UX changes to address user feedback. Because of changes to various internal Unity systems, the project initialization and load processes required significant refactoring. These changes were necessary to ensure backwards compatibility across the 4,000 devices we target, and used by the other Crunchyroll projects we we're simultaneously developing. Overall, the game is now much more performant and all bugs and user feedback has been addressed, I believe I've left it in a much better state than when I inherited it. The update is currently in it's final days of testing and slated to release in November 2024.",
+    icons: [
+      {
+        type: "font-awesome",
+        icon: faGamepad,
+      },
+      {
+        type: "font-awesome",
         icon: faUnity,
+      },
+      {
+        type: "fizz",
+        icon: "icon-csharp",
+      },
+      {
+        type: "font-awesome",
+        icon: faMobile,
+      },
+      {
+        type: "font-awesome",
+        icon: faAndroid,
+      },
+      {
+        type: "font-awesome",
+        icon: faApple,
       },
     ],
     time: "2024",
@@ -166,16 +217,24 @@ const items = [
     icons: [
       {
         type: "font-awesome",
-        icon: faMobile,
+        icon: faUnity,
       },
-      { type: "font-awesome", icon: faDocker },
       {
         type: "fizz",
         icon: "icon-csharp",
       },
+      { type: "font-awesome", icon: faDocker },
       {
         type: "font-awesome",
-        icon: faUnity,
+        icon: faMobile,
+      },
+      {
+        type: "font-awesome",
+        icon: faAndroid,
+      },
+      {
+        type: "font-awesome",
+        icon: faApple,
       },
     ],
     links: [
@@ -209,12 +268,12 @@ const items = [
         icon: faGamepad,
       },
       {
-        type: "fizz",
-        icon: "icon-csharp",
-      },
-      {
         type: "font-awesome",
         icon: faUnity,
+      },
+      {
+        type: "fizz",
+        icon: "icon-csharp",
       },
     ],
     links: [
@@ -239,6 +298,18 @@ const items = [
     icons: [
       {
         type: "font-awesome",
+        icon: faGamepad,
+      },
+      {
+        type: "font-awesome",
+        icon: faUnity,
+      },
+      {
+        type: "fizz",
+        icon: "icon-csharp",
+      },
+      {
+        type: "font-awesome",
         icon: faMobile,
       },
       {
@@ -247,18 +318,6 @@ const items = [
       },
       { type: "font-awesome", icon: faNode },
       { type: "font-awesome", icon: faReact },
-      {
-        type: "font-awesome",
-        icon: faGamepad,
-      },
-      {
-        type: "fizz",
-        icon: "icon-csharp",
-      },
-      {
-        type: "font-awesome",
-        icon: faUnity,
-      },
     ],
     links: [
       { title: "Website", href: "https://www.playshowtv.com/" },
@@ -306,7 +365,7 @@ const items = [
     time: "2019-2024",
   },
   {
-    img: catan,
+    img: { data: [{ url: catan }] },
     title: "Catan",
     description:
       "Powered by A 3D tilemap Engine, this is a quick prototype of a web-based, multiplayer, 3D version of the popular board game Settlers of Catan. ",
@@ -328,7 +387,7 @@ const items = [
     type: "Personal Project",
   },
   {
-    img: engine,
+    img: { data: [{ url: engine }] },
     title: "3D Tilemap Engine",
     description:
       "A Three.js powered, JavaScript, 3D tilemap engine for Node.js or the browser. Currently in development. Checkout the GitHub or the showcase sandbox for periodic updates.",
@@ -354,7 +413,7 @@ const items = [
     type: "Personal Project",
   },
   {
-    img: twit,
+    img: { data: [{ url: twit }] },
     title: "Twitter Bot Manager",
     description:
       "A NPM package built to bypass the lengthy Twitter bot setup stage and get straight to defining bot actions. " +
@@ -379,7 +438,7 @@ const items = [
     type: "Personal Project",
   },
   {
-    img: nba,
+    img: { data: [{ url: nba }] },
     title: "NBA Rosters",
     description:
       "A Node, Express, Vue, MongoDB web app that utilizes a RESTful API for CRUDL operations on NBA team rosters.",
@@ -402,7 +461,7 @@ const items = [
     type: "Personal Project",
   },
   {
-    img: jupyter,
+    img: { data: [{ url: jupyter }] },
     title: "Spotify ML",
     description:
       "Machine learning with Spotify to emulate Spotify's Discovery feature. Classification and Prediction based on user's listening habits, integrated with Amazon Alexa.",
@@ -426,7 +485,7 @@ const items = [
     type: "School Project",
   },
   {
-    img: smart,
+    img: { data: [{ url: smart }] },
     title: "SmartDJ",
     description:
       "An alternative to voice-based AI assistants, this software controls Spotify with nothing but your hand movements. (OpenCV, Python, Microsoft Kinect)",
@@ -449,7 +508,7 @@ const items = [
     type: "School Project",
   },
   {
-    img: smooth,
+    img: { data: [{ url: smooth }] },
     title: "smooth-load",
     description:
       "A GSAP and CSS3 animation powered loading spinner component for VueJS, deployed on NPM",
@@ -477,7 +536,7 @@ const items = [
     date: "2018",
   },
   {
-    img: syn,
+    img: { data: [{ url: syn }] },
     title: "Synesthesiafy",
     description:
       "A Node, Express, React web app that explores the relationship between music and color using Spotify",
@@ -502,7 +561,7 @@ const items = [
     type: "Personal Project",
   },
   {
-    img: city,
+    img: { data: [{ url: city }] },
     title: "Tower Defense Builder",
     description:
       "A procedurally generated, 3D crafting/survival game. Created with C#, Unity, and Blender.",
@@ -520,7 +579,7 @@ const items = [
     type: "School Project",
   },
   {
-    img: tree,
+    img: { data: [{ url: tree }] },
     title: "Generative Art",
     description:
       "A collection of doodles and creative expressions created with JavaScript, the HTML Canvas API, WebGL, and popular rendering libraries D3 and Three.js",

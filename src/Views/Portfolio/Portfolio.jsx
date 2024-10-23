@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "../../styles/CSS/Portfolio.css";
 import ScrollArrow from "../../Components/ScrollArrow/ScrollArrow.js";
 import PortfolioItem, {
@@ -26,87 +26,27 @@ import VerticalTimeline from "../../Components/VerticalTimeline/index.jsx";
 import { isMobile } from "mobile-device-detect";
 import { isMobileClient } from "../../util/misc.js";
 
-export default ({
-  color,
-  onCardHover,
-  isDrawing,
-  drawX,
-  hack,
-  setShouldHideNav,
-}) => {
+export default ({ color, onModalToggled, modalOpen }) => {
   const [state, setState] = useState({
     showingModal: false,
     modalItem: null,
     hovered: false,
-    hoveredIndex: 0,
-    ignoreHovered: false,
     isCondensed: false,
-    allowHoverFocus: false,
   });
 
-  const timer = useRef();
-  const scrollingToward = useRef(true);
-  const prevTop = useRef(0);
-  const delayTimer = useRef();
+  useEffect(() => {
+    if (
+      modalOpen !== undefined &&
+      !modalOpen &&
+      modalOpen !== state.showingModal
+    ) {
+      setState((s) => ({ ...s, showingModal: modalOpen }));
+    }
+  }, [modalOpen]);
 
   useEffect(() => {
-    if (state.showingModal) {
-      setShouldHideNav(true);
-    } else {
-      setShouldHideNav(false);
-    }
+    if (onModalToggled) onModalToggled(state.showingModal);
   }, [state.showingModal]);
-
-  useEffect(() => {
-    // const handleScroll = (e) => {
-    //   clearTimeout(timer.current);
-
-    //   const el = document.querySelector(".portfolio");
-    //   setState((s) => ({ ...s, ignoreHovered: true }));
-
-    //   if (onCardHover) onCardHover(false);
-
-    //   let curTop = el.getBoundingClientRect().top;
-
-    //   if (curTop > 0 && curTop < prevTop.current) {
-    //     scrollingToward.current = true;
-    //   } else if (curTop > 0 && curTop > prevTop.current) {
-    //     scrollingToward.current = false;
-    //   } else if (curTop < 0 && curTop < prevTop.current) {
-    //     scrollingToward.current = false;
-    //   } else if (curTop < 0 && curTop > prevTop.current) {
-    //     scrollingToward.current = true;
-    //   }
-
-    //   prevTop.current = curTop;
-
-    //   timer.current = setTimeout(() => {
-    //     setState((s) => ({ ...s, ignoreHovered: false }));
-    //   }, 500);
-    // };
-
-    // window.addEventListener("scroll", handleScroll);
-    return () => {
-      // window.removeEventListener("scroll", handleScroll);
-      clearTimeout(timer.current);
-      clearTimeout(delayTimer.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!state.allowHoverFocus && state.hovered)
-      setState((s) => ({ ...s, hovered: false }));
-  }, [state.allowHoverFocus]);
-
-  useEffect(() => {
-    if (onCardHover && !state.ignoreHovered) onCardHover(state.hovered);
-  }, [state.hovered]);
-
-  useEffect(() => {
-    if (!state.ignoreHovered && state.hovered) {
-      if (onCardHover) onCardHover(true);
-    }
-  }, [state.ignoreHovered]);
 
   const [view, setView] = useState("timeline");
   const [timelineSubView, setTimelineSubView] = useState("vertical");
@@ -115,97 +55,83 @@ export default ({
 
   const [sContainerRef, setSContainerRef] = useState(null);
 
-  const [items, setItems] = useState(PortfolioItems);
-
   useEffect(() => {
     setSContainerRef(containerRef.current);
   }, [containerRef]);
 
-  const [cards, setCards] = useState([]);
-  useEffect(() => {
-    const cards = PortfolioItems.map((item, i) => {
-      const cardComponent = (
-        <>
-          {view === "timeline" && i % 2 === 1 && (
-            <div
-              style={{
-                height: "5em",
-                margin: "0 1.5em",
-                display: "flex",
-                flexFlow: "row",
-                alignContent: "end",
-                justifyContent: "end",
-                alignItems: "end",
-              }}
-            >
-              <p style={{ fontWeight: "bold", fontStyle: "italic" }}>
-                {item.time}
-              </p>
-            </div>
-          )}
-          <PortfolioItem
-            key={"portfolio-item-" + i}
-            item={item}
-            onShowMore={() =>
-              setState((state) => ({
-                ...state,
-                showingModal: true,
-                modalItem: item,
-              }))
-            }
-            onShowLess={() =>
-              setState((state) => ({
-                ...state,
-                showingModal: false,
-                modalItem: null,
-              }))
-            }
-            isCondensed={view === "timeline" || state.isCondensed}
-            // onHover={(hovered) => {
-            //   clearTimeout(delayTimer.current);
+  // const [cards, setCards] = useState([]);
+  // useEffect(() => {
 
-            //   if (hovered || state.ignoreHovered) {
-            //     setState((s) => ({
-            //       ...s,
-            //       hovered: hovered,
-            //       hoveredIndex: i,
-            //     }));
-            //   } else {
-            //     delayTimer.current = setTimeout(() => {
-            //       setState((s) => ({
-            //         ...s,
-            //         hovered: hovered,
-            //         hoveredIndex: i,
-            //       }));
-            //     }, 250);
-            //   }
-            // }}
-            modalOpen={state.showingModal}
-            allowHoverFocus={state.allowHoverFocus}
-          />
-          {view === "timeline" && i % 2 === 0 && (
-            <div
-              style={{
-                height: "5em",
-                margin: "0 1.5em",
-                display: "flex",
-                flexFlow: "row",
-              }}
-            >
-              <p style={{ fontWeight: "bold", fontStyle: "italic" }}>
-                {item.time}
-              </p>
-            </div>
-          )}
-        </>
-      );
-      if (view === "timeline") return <div>{cardComponent}</div>;
-      else return cardComponent;
-    });
+  //   // setCards(cards);
+  //   // setItems(PortfolioItems);
+  // }, [view, state.isCondensed]);
 
-    setCards(cards);
-    setItems(PortfolioItems);
-  }, [view, state.isCondensed]);
+  // const getCards =
+  //   //  useCallback(
+  //   (renderView, condensed) => {
+  //     const cards = PortfolioItems.map((item, i) => {
+  //       const cardComponent = (
+  //         <>
+  //           {renderView === "timeline" && i % 2 === 1 && (
+  //             <div
+  //               style={{
+  //                 height: "5em",
+  //                 margin: "0 1.5em",
+  //                 display: "flex",
+  //                 flexFlow: "row",
+  //                 alignContent: "end",
+  //                 justifyContent: "end",
+  //                 alignItems: "end",
+  //               }}
+  //             >
+  //               <p style={{ fontWeight: "bold", fontStyle: "italic" }}>
+  //                 {item.time}
+  //               </p>
+  //             </div>
+  //           )}
+  //           <PortfolioItem
+  //             key={"portfolio-item-" + i}
+  //             item={item}
+  //             onShowMore={() =>
+  //               setState((state) => ({
+  //                 ...state,
+  //                 showingModal: true,
+  //                 modalItem: item,
+  //               }))
+  //             }
+  //             onShowLess={() =>
+  //               setState((state) => ({
+  //                 ...state,
+  //                 showingModal: false,
+  //                 modalItem: null,
+  //               }))
+  //             }
+  //             isCondensed={renderView !== "timeline" && condensed}
+  //           />
+  //           {renderView === "timeline" && i % 2 === 0 && (
+  //             <div
+  //               style={{
+  //                 height: "5em",
+  //                 margin: "0 1.5em",
+  //                 display: "flex",
+  //                 flexFlow: "row",
+  //               }}
+  //             >
+  //               <p style={{ fontWeight: "bold", fontStyle: "italic" }}>
+  //                 {item.time}
+  //               </p>
+  //             </div>
+  //           )}
+  //         </>
+  //       );
+
+  //       if (renderView === "timeline") return <div>{cardComponent}</div>;
+  //       else return cardComponent;
+  //     });
+
+  //     return cards;
+  //   };
+  // }, [view, state.isCondensed]);
 
   useEffect(() => {
     if (isMobile || isMobileClient()) {
@@ -216,20 +142,33 @@ export default ({
   return (
     <>
       {/* <PortfolioProvider> */}
-      {state.modalItem && (
-        <ModalPortfolioItem
-          color={color}
-          item={state.modalItem}
-          open={state.showingModal}
-          handleClose={() =>
-            setState((state) => ({
-              ...state,
-              showingModal: false,
-              modalItem: null,
-            }))
-          }
-        />
-      )}
+      {/* {state.modalItem && ( */}
+      <ModalPortfolioItem
+        color={color}
+        item={state.modalItem}
+        items={PortfolioItems}
+        open={state.showingModal}
+        onNavigate={(direction) => {
+          if (!state.showingModal || !state.modalItem) return;
+
+          const curIndex = PortfolioItems.indexOf(state.modalItem);
+          let nextIndex = curIndex + direction;
+          if (nextIndex < 0) nextIndex = PortfolioItems.length - 1;
+          if (nextIndex >= PortfolioItems.length) nextIndex = 0;
+          setState((s) => ({
+            ...s,
+            modalItem: PortfolioItems[nextIndex],
+          }));
+        }}
+        handleClose={() =>
+          setState((state) => ({
+            ...state,
+            showingModal: false,
+            modalItem: null,
+          }))
+        }
+      />
+      {/* )} */}
 
       <div className="portfolio">
         <div className="content-grid">
@@ -237,10 +176,9 @@ export default ({
             <div className="blur-container">
               <ColorCharacters
                 style={{
-                  transition:
-                    state.ignoreHovered || !state.hovered
-                      ? "color 0s linear"
-                      : "color .15s linear 0s",
+                  transition: !state.hovered
+                    ? "color 0s linear"
+                    : "color .15s linear 0s",
                   fontSize: "3rem",
                 }}
                 string={"Portfolio"}
@@ -328,7 +266,28 @@ export default ({
             }}
             ref={containerRef}
           >
-            {view === "cards" && cards}
+            {view === "cards" &&
+              PortfolioItems.map((item, i) => (
+                <PortfolioItem
+                  key={"portfolio-item-" + i}
+                  item={item}
+                  onShowMore={() =>
+                    setState((state) => ({
+                      ...state,
+                      showingModal: true,
+                      modalItem: item,
+                    }))
+                  }
+                  onShowLess={() =>
+                    setState((state) => ({
+                      ...state,
+                      showingModal: false,
+                      modalItem: null,
+                    }))
+                  }
+                  isCondensed={state.isCondensed}
+                />
+              ))}
             {view === "timeline" && (
               <>
                 {timelineSubView === "horizontal" && (
@@ -342,12 +301,12 @@ export default ({
                       }))
                     }
                   >
-                    {cards}
+                    {/* {getCards("timeline", false)} */}
                   </HorizontalTimeline>
                 )}
                 {timelineSubView === "vertical" && (
                   <VerticalTimeline
-                    items={items}
+                    items={PortfolioItems}
                     onShowMore={(item) =>
                       setState((s) => ({
                         ...s,

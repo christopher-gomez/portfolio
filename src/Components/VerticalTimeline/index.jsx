@@ -93,7 +93,6 @@ export default ({ items, onShowMore = () => {} }) => {
             {viewType === "cards" && (
               <PortfolioItem
                 item={item}
-                allowDyanimicExpansion={false}
                 isCondensed={true}
                 onShowMore={(item) => onShowMore(item)}
               />

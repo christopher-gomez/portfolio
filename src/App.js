@@ -50,8 +50,6 @@ const App = () => {
     hack: false,
   });
 
-  const [shouldHideNav, setShouldHideNav] = useState(true);
-
   // const isScrolling = useRef(false);
 
   // const scrollTimer = useRef();
@@ -155,6 +153,10 @@ const App = () => {
 
   const [shouldUseWebGL, setShouldUseWebGL] = useState(true);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [modalOpen, setModalOpen] = useState(false);
+
   const style = !introComplete
     ? { maxHeight: "100vh", overflow: "hidden" }
     : {};
@@ -208,7 +210,14 @@ const App = () => {
             }}
           />
         </Box>
-        <Nav introComplete={introComplete} />
+        <Nav
+          introComplete={introComplete}
+          modalOpen={isModalOpen}
+          onSetModalClosed={() => {
+            setIsModalOpen(false);
+            setModalOpen(false);
+          }}
+        />
         <Transition visible={state.contentShowing}>
           <Landing
             {...state}
@@ -230,14 +239,11 @@ const App = () => {
             }}
           />
           <Portfolio
-            onCardHover={(hovered) => {
-              if (hovered) {
-                document.querySelector(".App").classList.add("hovered");
-              } else {
-                document.querySelector(".App").classList.remove("hovered");
-              }
+            modalOpen={modalOpen}
+            onModalToggled={(open) => {
+              setModalOpen(open);
+              setIsModalOpen(open);
             }}
-            setShouldHideNav={setShouldHideNav}
           />
           <About />
           <ScrollTop />

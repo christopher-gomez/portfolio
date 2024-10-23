@@ -75,7 +75,7 @@ export default ({ children }) => {
 
   const childrenWithProps = React.Children.map(children, (child, index) => {
     return React.cloneElement(child, {
-      toggleRandomTheme,
+      // toggleRandomTheme,
       color: state.color,
     });
   });
