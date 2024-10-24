@@ -27,6 +27,8 @@ export default ({ introComplete, modalOpen, onSetModalClosed }) => {
   const handleVisible = () => {
     if (!nav.current) return;
 
+    console.log('intro ref visible');
+
     nav.current.classList.remove("fade-in-top");
     nav.current.classList.add("fade-out-top-nav");
     isVisible.current = true;
@@ -34,6 +36,8 @@ export default ({ introComplete, modalOpen, onSetModalClosed }) => {
 
   const handleHidden = () => {
     if (!nav.current) return;
+
+    console.log('intro ref hidden');
 
     nav.current.classList.remove("fade-out-top-nav");
     nav.current.classList.add("scrolled");
@@ -47,8 +51,6 @@ export default ({ introComplete, modalOpen, onSetModalClosed }) => {
     handleVisible,
     handleHidden,
     0.99,
-    null,
-    -120
   );
 
   useEffect(() => {

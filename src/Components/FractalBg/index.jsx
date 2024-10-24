@@ -435,7 +435,6 @@ export default (props) => {
     },
     0.99,
     null,
-    -120
   );
 
   useEffect(() => {

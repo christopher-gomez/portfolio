@@ -235,6 +235,8 @@ export default ({
   const handleVisible = () => {
     if (!loaded) return;
 
+    console.log('wrapper ref visible');
+
     displayScrollElement(nameContainer.current);
     displayScrollElement(arrowContainer.current, "fade-in-grow");
     wrapperRef.current.classList.remove("hidden-bg");
@@ -242,6 +244,8 @@ export default ({
 
   const handleHidden = () => {
     if (!loaded) return;
+
+    console.log('wrapper ref hidden');
 
     _onIntroComplete();
 
@@ -256,7 +260,6 @@ export default ({
     handleHidden,
     0.99,
     null,
-    -120
   );
 
   useEffect(() => {
@@ -274,39 +277,39 @@ export default ({
 
   const resizing = useRef(false);
 
-  useEffect(() => {
-    function checkLineWrap() {
-      if (!charContainer.current) return;
+  // useEffect(() => {
+  //   function checkLineWrap() {
+  //     if (!charContainer.current) return;
 
-      clearTimeout(wrapCheckTimeout.current);
-      resizing.current = true;
+  //     clearTimeout(wrapCheckTimeout.current);
+  //     resizing.current = true;
 
-      wrapCheckTimeout.current = setTimeout(() => {
-        detectLineWrap(
-          charContainer.current,
-          () => {
-            setState((s) => ({ ...s, wrapped: true }));
-          },
-          () => {
-            setState((s) => ({ ...s, wrapped: false }));
-          }
-        );
-        resizing.current = false;
-      }, 250);
-    }
+  //     wrapCheckTimeout.current = setTimeout(() => {
+  //       detectLineWrap(
+  //         charContainer.current,
+  //         () => {
+  //           setState((s) => ({ ...s, wrapped: true }));
+  //         },
+  //         () => {
+  //           setState((s) => ({ ...s, wrapped: false }));
+  //         }
+  //       );
+  //       resizing.current = false;
+  //     }, 250);
+  //   }
 
-    if (charContainer.current) {
-      // handles window resize events
-      window.addEventListener("resize", checkLineWrap);
-      checkLineWrap();
-    } else {
-      window.removeEventListener("resize", checkLineWrap);
-    }
+  //   if (charContainer.current) {
+  //     // handles window resize events
+  //     window.addEventListener("resize", checkLineWrap);
+  //     checkLineWrap();
+  //   } else {
+  //     window.removeEventListener("resize", checkLineWrap);
+  //   }
 
-    return () => {
-      window.removeEventListener("resize", checkLineWrap);
-    };
-  }, [charContainer.current]);
+  //   return () => {
+  //     window.removeEventListener("resize", checkLineWrap);
+  //   };
+  // }, [charContainer.current]);
 
   const [shouldArrowBounce, setShouldArrowBounce] = useState(false);
   const arrowBounceTimeout = useRef();
